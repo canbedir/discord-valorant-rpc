@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/index.mjs",
     "ranks": "node src/index.mjs --list-ranks",
+    "demo": "node src/index.mjs --demo --debug",
     "debug": "node src/index.mjs --debug",
     "download-assets": "node scripts/download-assets.mjs"
   },
