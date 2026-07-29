@@ -7,6 +7,7 @@
   "rank": {
     "mode": "override",
     "override": "Radiant",
+    "overrideLeaderboardPosition": 0,
     "showLeaderboardPosition": false
   },
 

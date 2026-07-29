@@ -15,6 +15,7 @@ const DEFAULTS = {
   rank: {
     mode: 'real',
     override: 'Radiant',
+    overrideLeaderboardPosition: 0,
     showLeaderboardPosition: false,
   },
   display: {
