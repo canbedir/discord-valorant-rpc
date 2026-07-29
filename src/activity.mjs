@@ -1,14 +1,14 @@
 import { localizeRankName } from './data/strings.mjs';
 import { log } from './log.mjs';
+import { m } from './i18n.mjs';
 
 const MAX_FIELD = 128;
 
-/** Discord 128 karakteri asan details/state alanlarini reddediyor. */
+/** Discord rejects details/state longer than 128 characters, and shorter than 2. */
 function clamp(text) {
   if (!text) return undefined;
   const value = String(text).trim();
   if (value.length === 0) return undefined;
-  // Discord ayrica en az 2 karakter istiyor.
   if (value.length === 1) return `${value} `;
   return value.length > MAX_FIELD ? `${value.slice(0, MAX_FIELD - 1)}…` : value;
 }
@@ -23,10 +23,10 @@ function slug(text) {
 let overrideWarned = false;
 
 /**
- * Ekranda gosterilecek rank'i belirler.
- *   real     -> presence.competitiveTier (oyunun gercek degeri)
- *   override -> config.rank.override (istedigin sabit rank)
- *   hide     -> rank hic gosterilmez
+ * Decides which rank to display.
+ *   real     -> presence.competitiveTier, whatever the game reports
+ *   override -> a fixed tier from config, regardless of the real one
+ *   hide     -> no rank badge at all
  */
 export function resolveDisplayRank(presence, config, catalog, lang) {
   if (config.rank.mode === 'hide') return null;
@@ -39,10 +39,7 @@ export function resolveDisplayRank(presence, config, catalog, lang) {
     if (tier === null) {
       if (!overrideWarned) {
         overrideWarned = true;
-        log.warn(
-          `rank.override degeri "${config.rank.override}" taninmadi, gercek rank gosteriliyor. ` +
-            'Gecerli isimler icin: npm run ranks',
-        );
+        log.warn(m('rank.unknownOverride', config.rank.override));
       }
       tier = presence.competitiveTier;
     } else {
@@ -65,9 +62,9 @@ export function resolveDisplayRank(presence, config, catalog, lang) {
 }
 
 /**
- * Gorsel referansini uretir. "url" modunda Discord CDN'e gerek kalmadan
- * dogrudan valorant-api baglantisi kullanilir; "key" modunda Discord
- * Developer Portal'a yuklenmis asset anahtarlari beklenir.
+ * Produces the image reference. In "url" mode the valorant-api link is sent
+ * straight through and Discord proxies it, which avoids uploading anything;
+ * "key" mode expects assets uploaded to the Discord application instead.
  */
 function asset(config, { url, key }) {
   if (config.assets.source === 'key') {
@@ -89,8 +86,8 @@ function scoreText(presence) {
 }
 
 /**
- * Presence + config -> Discord activity nesnesi.
- * startedAt, ayni durumda gecen sureyi saymak icin ana dongude tutulur.
+ * presence + config -> a Discord activity object.
+ * startedAt is tracked by the main loop so the elapsed timer survives polls.
  */
 export function buildActivity({ presence, catalog, config, t, startedAt }) {
   const lang = t.lang;
@@ -147,7 +144,7 @@ export function buildActivity({ presence, catalog, config, t, startedAt }) {
     state = state ? `${state} • ${level}` : level;
   }
 
-  // Buyuk gorsel: mac icindeyken harita, menude oyuncu karti.
+  // Large image: the map while in a match, the player card while in menus.
   const cardUrl = catalog.card(presence.playerCardId);
   const wantsMap = config.display.largeImage === 'map' && inMatch && mapInfo;
 
@@ -196,7 +193,7 @@ export function buildActivity({ presence, catalog, config, t, startedAt }) {
   return activity;
 }
 
-/** Oyun kapaliyken gosterilecek opsiyonel "bosta" durumu. */
+/** Optional presence shown while the game is closed. */
 export function buildIdleActivity({ config, t, startedAt }) {
   return {
     type: 0,

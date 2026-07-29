@@ -6,16 +6,19 @@ import { DiscordIPC } from './discord/ipc.mjs';
 import { buildActivity, buildIdleActivity } from './activity.mjs';
 import { nextDemoPresence } from './demoPresence.mjs';
 import { log, setDebug, COLORS } from './log.mjs';
+import { m, setLanguage } from './i18n.mjs';
 
 const RECONNECT_DELAY_MS = 15000;
 
 function printRanks(catalog, lang) {
-  console.log('\nKullanilabilir rank degerleri (config.json -> rank.override):\n');
+  console.log(`\n${m('ranks.header')}\n`);
   for (const r of catalog.listRanks(lang)) {
     const tier = String(r.tier).padStart(2);
-    console.log(`  ${COLORS.dim}${tier}${COLORS.reset}  ${r.localized.padEnd(14)} ${COLORS.dim}${r.name}${COLORS.reset}`);
+    console.log(
+      `  ${COLORS.dim}${tier}${COLORS.reset}  ${r.localized.padEnd(14)} ${COLORS.dim}${r.name}${COLORS.reset}`,
+    );
   }
-  console.log('\nSayiyi da ismi de yazabilirsin: 27, "Radiant", "Olumsuz 3" hepsi gecerli.\n');
+  console.log(`\n${m('ranks.footer')}\n`);
 }
 
 async function main() {
@@ -23,14 +26,14 @@ async function main() {
   if (args.includes('--debug')) setDebug(true);
 
   if (args.includes('--list-ranks')) {
-    const catalog = await loadCatalog();
-    let lang = 'tr';
+    let lang = 'en';
     try {
       lang = loadConfig().language;
     } catch {
-      // config henuz kurulmamis olabilir, listeyi yine de gosterelim
+      // The config may not be set up yet; list the ranks anyway.
     }
-    printRanks(catalog, lang);
+    setLanguage(lang);
+    printRanks(await loadCatalog(), lang);
     return;
   }
 
@@ -46,7 +49,7 @@ async function main() {
   ipc.on('disconnect', (err) => {
     connected = false;
     nextConnectAttempt = Date.now() + RECONNECT_DELAY_MS;
-    log.warn(`Discord baglantisi koptu (${err.message}). Yeniden denenecek.`);
+    log.warn(m('discord.lost', err.message));
   });
 
   async function ensureDiscord() {
@@ -56,8 +59,7 @@ async function main() {
     try {
       const user = await ipc.connect();
       connected = true;
-      const who = user?.username ? `${user.username}` : 'bilinmeyen kullanici';
-      log.discord(`Baglandi: ${who}`);
+      log.discord(m('discord.connected', user?.username ?? m('discord.unknownUser')));
       return true;
     } catch (err) {
       nextConnectAttempt = Date.now() + RECONNECT_DELAY_MS;
@@ -82,20 +84,20 @@ async function main() {
         presence = await fetchValorantPresence();
         if (!riotWasUp) {
           riotWasUp = true;
-          log.riot('Riot Client tekrar erisilebilir.');
+          log.riot(m('riot.backOnline'));
         }
       } catch (err) {
         if (riotWasUp) {
           riotWasUp = false;
-          log.riot(`Presence okunamadi: ${err.message}`);
+          log.riot(m('riot.presenceFailed', err.message));
         }
-        // Riot Client yeniden acildiginda PUUID degisebilir, onbellegi dusur.
+        // The PUUID can change when the Riot Client restarts, so drop the cache.
         resetPuuidCache();
       }
     }
 
-    // Ayni durumda gecirilen sureyi saymak icin durum imzasi tutuyoruz;
-    // imza degisince Discord'daki sayac sifirdan baslar.
+    // A state signature drives the elapsed timer: when it changes the counter
+    // in Discord restarts, so it measures the match rather than the process.
     const signature = presence
       ? [presence.sessionLoopState, presence.matchMap, presence.queueId, presence.partyState].join('|')
       : 'offline';
@@ -121,16 +123,16 @@ async function main() {
       log.info(`${activity.details ?? ''}${activity.state ? ` | ${activity.state}` : ''}`);
       log.debug(JSON.stringify(activity));
     } else {
-      log.info('Durum temizlendi (VALORANT calismiyor).');
+      log.info(m('app.cleared'));
     }
   }
 
-  log.ok(`valorant-tracker calisiyor. Cikmak icin Ctrl+C. (${config.pollIntervalMs} ms araliklarla)`);
-  if (demoMode) log.warn('DEMO modu: gercek presence yerine sahte veri gonderiliyor.');
+  log.ok(m('app.running', config.pollIntervalMs));
+  if (demoMode) log.warn(m('app.demo'));
   log.info(
     config.rank.mode === 'override'
-      ? `Rank modu: override -> "${config.rank.override}"`
-      : `Rank modu: ${config.rank.mode}`,
+      ? m('app.rankOverride', config.rank.override)
+      : m('app.rankMode', config.rank.mode),
   );
 
   await tick();
@@ -143,9 +145,9 @@ async function main() {
     if (shuttingDown) return;
     shuttingDown = true;
     clearInterval(timer);
-    log.info('Kapaniyor, Discord durumu temizleniyor...');
+    log.info(m('app.shuttingDown'));
     if (connected) ipc.clearActivity();
-    // Temizleme cercevesinin pipe'a yazilmasina firsat ver.
+    // Give the clearing frame a moment to reach the pipe.
     setTimeout(() => {
       ipc.destroy();
       process.exit(0);

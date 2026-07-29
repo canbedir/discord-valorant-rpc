@@ -2,14 +2,14 @@ import net from 'node:net';
 import { EventEmitter } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import { log } from '../log.mjs';
+import { m } from '../i18n.mjs';
 
 /**
- * Discord masaustu istemcisi, Rich Presence icin yerel bir IPC soketi dinler.
- * Windows'ta bu bir named pipe: \\?\pipe\discord-ipc-N (N = 0..9).
- * Birden fazla Discord surumu (stable/PTB/canary) acikken numaralar kayar,
- * o yuzden sirayla hepsini deniyoruz.
+ * The Discord desktop client listens on a local IPC socket for Rich Presence.
+ * On Windows that is a named pipe: \\?\pipe\discord-ipc-N (N = 0..9). The
+ * number shifts when stable/PTB/canary run side by side, so we probe all ten.
  *
- * Cerceve formati: [int32LE opcode][int32LE payloadLength][utf8 JSON]
+ * Frame layout: [int32LE opcode][int32LE payloadLength][utf8 JSON]
  */
 const OP = {
   HANDSHAKE: 0,
@@ -47,7 +47,7 @@ export class DiscordIPC extends EventEmitter {
     this.user = null;
   }
 
-  /** Tum pipe'lari sirayla dener; ilk basarili baglantida READY bekler. */
+  /** Tries every pipe in turn and waits for READY on the first one that answers. */
   async connect() {
     for (let i = 0; i < PIPE_COUNT; i++) {
       try {
@@ -57,12 +57,12 @@ export class DiscordIPC extends EventEmitter {
         log.debug(`discord-ipc-${i}: ${err.message}`);
       }
     }
-    throw new Error('Discord IPC soketi bulunamadi. Discord masaustu uygulamasi acik mi?');
+    throw new Error(m('discord.noSocket'));
   }
 
   #tryPipe(index) {
     return new Promise((resolve, reject) => {
-      // Onceki basarisiz denemeden yarim cerceve kalmis olabilir.
+      // A previous failed attempt may have left half a frame behind.
       this.buffer = Buffer.alloc(0);
 
       const socket = net.createConnection(pipePath(index));
@@ -76,10 +76,10 @@ export class DiscordIPC extends EventEmitter {
         reject(err);
       };
 
-      const timer = setTimeout(() => fail(new Error('handshake zaman asimi')), 5000);
+      const timer = setTimeout(() => fail(new Error(m('discord.handshakeTimeout'))), 5000);
 
       socket.once('error', fail);
-      socket.once('close', () => fail(new Error('soket kapandi')));
+      socket.once('close', () => fail(new Error(m('discord.socketClosed'))));
 
       socket.once('connect', () => {
         socket.write(encodeFrame(OP.HANDSHAKE, { v: 1, client_id: this.clientId }));
@@ -90,7 +90,7 @@ export class DiscordIPC extends EventEmitter {
 
         for (const { op, data } of this.#drainFrames()) {
           if (op === OP.CLOSE) {
-            fail(new Error(data?.message ?? 'Discord baglantiyi kapatti'));
+            fail(new Error(data?.message ?? m('discord.closed')));
             return;
           }
           if (op === OP.FRAME && data?.evt === 'READY') {
@@ -107,7 +107,7 @@ export class DiscordIPC extends EventEmitter {
     });
   }
 
-  /** Handshake bitince soketi kalici hale getirir ve kopus dinleyicilerini kurar. */
+  /** Promotes the handshaken socket to the live one and wires up loss handling. */
   #adopt(socket, user) {
     this.socket = socket;
     this.ready = true;
@@ -119,10 +119,10 @@ export class DiscordIPC extends EventEmitter {
         if (op === OP.PING) {
           socket.write(encodeFrame(OP.PONG, data));
         } else if (op === OP.CLOSE) {
-          this.#handleDisconnect(new Error(data?.message ?? 'Discord baglantiyi kapatti'));
+          this.#handleDisconnect(new Error(data?.message ?? m('discord.closed')));
         } else if (op === OP.FRAME) {
           if (data?.evt === 'ERROR') {
-            log.warn(`Discord istegi reddetti: ${data.data?.message ?? 'bilinmeyen hata'}`);
+            log.warn(m('discord.rejected', data.data?.message ?? '?'));
           }
           log.debug('discord frame', JSON.stringify(data));
         }
@@ -130,7 +130,7 @@ export class DiscordIPC extends EventEmitter {
     });
 
     socket.on('error', (err) => this.#handleDisconnect(err));
-    socket.on('close', () => this.#handleDisconnect(new Error('soket kapandi')));
+    socket.on('close', () => this.#handleDisconnect(new Error(m('discord.socketClosed'))));
 
     if (this.pendingActivity !== undefined) {
       this.setActivity(this.pendingActivity);
@@ -147,7 +147,7 @@ export class DiscordIPC extends EventEmitter {
     this.emit('disconnect', err);
   }
 
-  /** Tampondaki tam cerceveleri cikarir; yarim cerceve tamponda kalir. */
+  /** Pulls complete frames out of the buffer, leaving any partial one behind. */
   *#drainFrames() {
     while (this.buffer.length >= 8) {
       const op = this.buffer.readInt32LE(0);
@@ -161,13 +161,13 @@ export class DiscordIPC extends EventEmitter {
       try {
         data = JSON.parse(body);
       } catch {
-        log.debug('discord: JSON olmayan cerceve atlandi');
+        log.debug(m('discord.badFrame'));
       }
       yield { op, data };
     }
   }
 
-  /** activity = null gonderirsen Discord'daki durum tamamen silinir. */
+  /** Passing null wipes the presence in Discord entirely. */
   setActivity(activity) {
     this.pendingActivity = activity;
     if (!this.ready || !this.socket) return false;

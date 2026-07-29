@@ -1,13 +1,15 @@
 import https from 'node:https';
 import { readLockfile } from './lockfile.mjs';
+import { m } from '../i18n.mjs';
 
-// Riot Client kendi kendine imzali bir sertifika kullaniyor, dogrulamayi kapatmak
-// zorundayiz. Baglanti 127.0.0.1'e gittigi icin disariya hicbir sey sizmiyor.
+// The Riot Client serves its local API over a self-signed certificate, so
+// verification has to be off. Everything stays on 127.0.0.1 — nothing leaves
+// the machine.
 const agent = new https.Agent({ rejectUnauthorized: false, keepAlive: true });
 
 class RiotClientClosedError extends Error {
   constructor() {
-    super('Riot Client kapali (lockfile yok).');
+    super(m('riot.clientClosed'));
     this.name = 'RiotClientClosedError';
   }
 }
@@ -36,19 +38,19 @@ function request(lock, endpoint) {
           try {
             resolve(JSON.parse(body));
           } catch {
-            reject(new Error(`${endpoint} -> gecersiz JSON`));
+            reject(new Error(`${endpoint} -> invalid JSON`));
           }
         });
       },
     );
 
-    req.on('timeout', () => req.destroy(new Error(`${endpoint} -> zaman asimi`)));
+    req.on('timeout', () => req.destroy(new Error(`${endpoint} -> timed out`)));
     req.on('error', reject);
     req.end();
   });
 }
 
-/** Riot hesabinin PUUID'si. Presence listesinde kendimizi bulmak icin gerekli. */
+/** Our own PUUID, used to find ourselves in the presence list. */
 export async function getSelfPuuid() {
   const lock = readLockfile();
   if (!lock) throw new RiotClientClosedError();
@@ -56,7 +58,7 @@ export async function getSelfPuuid() {
   return data.subject;
 }
 
-/** Riot Client chat'indeki tum presence'lar (VALORANT, LoL, TFT hepsi burada). */
+/** Every presence in the Riot Client chat — VALORANT, LoL and TFT all land here. */
 export async function getPresences() {
   const lock = readLockfile();
   if (!lock) throw new RiotClientClosedError();

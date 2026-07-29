@@ -1,27 +1,13 @@
 /**
- * Kuyruk kimlikleri presence.queueId alanindan gelir. valorant-api.com
- * gamemodes ucundaki queueID alanlari bos donduugu icin bu esleme elle tutuluyor.
+ * Strings that end up in the Discord presence itself, chosen by config.language.
+ * Console output goes through i18n.mjs instead.
+ */
+
+/**
+ * Queue ids come from presence.queueId. valorant-api.com returns a null
+ * queueID on every game mode, so this mapping is maintained by hand.
  */
 const QUEUES = {
-  tr: {
-    competitive: 'Rekabetçi',
-    unrated: 'Derecesiz',
-    swiftplay: 'Hızlı Oyun',
-    spikerush: 'Spike Rush',
-    deathmatch: 'Ölüm Maçı',
-    hurm: 'Takım Ölüm Maçı',
-    ggteam: 'Yükseliş',
-    onefa: 'Replikasyon',
-    snowball: 'Kartopu Savaşı',
-    newmap: 'Yeni Harita',
-    seeding: 'Derecelendirme',
-    premier: 'Premier',
-    premiermatch: 'Premier Maçı',
-    premierseedingmatch: 'Premier Eleme',
-    aros: 'Tek Bölge Rastgele',
-    ascension: 'Yükseliş Çatışması',
-    skirmish: 'Çatışma',
-  },
   en: {
     competitive: 'Competitive',
     unrated: 'Unrated',
@@ -41,24 +27,28 @@ const QUEUES = {
     ascension: 'Skirmish: Ascension',
     skirmish: 'Skirmish',
   },
+  tr: {
+    competitive: 'Rekabetçi',
+    unrated: 'Derecesiz',
+    swiftplay: 'Hızlı Oyun',
+    spikerush: 'Spike Rush',
+    deathmatch: 'Ölüm Maçı',
+    hurm: 'Takım Ölüm Maçı',
+    ggteam: 'Yükseliş',
+    onefa: 'Replikasyon',
+    snowball: 'Kartopu Savaşı',
+    newmap: 'Yeni Harita',
+    seeding: 'Derecelendirme',
+    premier: 'Premier',
+    premiermatch: 'Premier Maçı',
+    premierseedingmatch: 'Premier Eleme',
+    aros: 'Tek Bölge Rastgele',
+    ascension: 'Yükseliş Çatışması',
+    skirmish: 'Çatışma',
+  },
 };
 
 const STRINGS = {
-  tr: {
-    mainMenu: 'Ana Menü',
-    inQueue: 'Sırada',
-    agentSelect: 'Ajan Seçimi',
-    customSetup: 'Özel Oyun Kurulumu',
-    customGame: 'Özel Oyun',
-    shootingRange: 'Atış Poligonu',
-    away: 'Boşta',
-    party: 'Parti',
-    level: 'Seviye',
-    unknownMap: 'Bilinmeyen Harita',
-    unranked: 'Derecesiz',
-    playing: 'VALORANT',
-    leaderboard: '#',
-  },
   en: {
     mainMenu: 'Main Menu',
     inQueue: 'In Queue',
@@ -72,22 +62,37 @@ const STRINGS = {
     unknownMap: 'Unknown Map',
     unranked: 'Unranked',
     playing: 'VALORANT',
-    leaderboard: '#',
+  },
+  tr: {
+    mainMenu: 'Ana Menü',
+    inQueue: 'Sırada',
+    agentSelect: 'Ajan Seçimi',
+    customSetup: 'Özel Oyun Kurulumu',
+    customGame: 'Özel Oyun',
+    shootingRange: 'Atış Poligonu',
+    away: 'Boşta',
+    party: 'Parti',
+    level: 'Seviye',
+    unknownMap: 'Bilinmeyen Harita',
+    unranked: 'Derecesiz',
+    playing: 'VALORANT',
   },
 };
 
-/** Rank isimleri; override ayarinda kullanici bunlari yazabilir. */
-const RANK_NAMES_TR = {
-  UNRANKED: 'Derecesiz',
-  IRON: 'Demir',
-  BRONZE: 'Bronz',
-  SILVER: 'Gümüş',
-  GOLD: 'Altın',
-  PLATINUM: 'Platin',
-  DIAMOND: 'Elmas',
-  ASCENDANT: 'Yükselen',
-  IMMORTAL: 'Ölümsüz',
-  RADIANT: 'Radiant',
+/** Rank tier words; config.rank.override accepts any of these spellings. */
+const RANK_NAMES = {
+  tr: {
+    UNRANKED: 'Derecesiz',
+    IRON: 'Demir',
+    BRONZE: 'Bronz',
+    SILVER: 'Gümüş',
+    GOLD: 'Altın',
+    PLATINUM: 'Platin',
+    DIAMOND: 'Elmas',
+    ASCENDANT: 'Yükselen',
+    IMMORTAL: 'Ölümsüz',
+    RADIANT: 'Radiant',
+  },
 };
 
 export function createTranslator(language) {
@@ -102,21 +107,19 @@ export function createTranslator(language) {
 }
 
 /**
- * valorant-api "IRON 2" gibi doner. Turkce icin bunu "Demir 2"ye cevirir,
- * diger dillerde Title Case'e normalize eder.
+ * valorant-api returns names like "IRON 2". Translates the tier word when the
+ * language has a mapping, otherwise just normalises it to Title Case.
  */
 export function localizeRankName(rawName, lang) {
   if (!rawName) return null;
   const [tierWord, ...rest] = rawName.trim().split(/\s+/);
   const number = rest.join(' ');
 
-  if (lang === 'tr') {
-    const translated = RANK_NAMES_TR[tierWord.toUpperCase()];
-    if (translated) return number ? `${translated} ${number}` : translated;
-  }
+  const translated = RANK_NAMES[lang]?.[tierWord.toUpperCase()];
+  if (translated) return number ? `${translated} ${number}` : translated;
 
   const titled = tierWord.charAt(0) + tierWord.slice(1).toLowerCase();
   return number ? `${titled} ${number}` : titled;
 }
 
-export { QUEUES, RANK_NAMES_TR };
+export { QUEUES, RANK_NAMES };

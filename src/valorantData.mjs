@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from './config.mjs';
 import { log } from './log.mjs';
+import { m } from './i18n.mjs';
 import { localizeRankName } from './data/strings.mjs';
 
 const CACHE_DIR = path.join(ROOT, '.cache');
@@ -10,7 +11,7 @@ const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const API = 'https://valorant-api.com/v1';
 
-/** Aksan/bosluk/noktalama farklarini yok sayan karsilastirma anahtari. */
+/** Comparison key that ignores accents, spacing and punctuation. */
 function normalizeKey(value) {
   return String(value)
     .normalize('NFD')
@@ -33,13 +34,13 @@ async function downloadCatalog() {
     getJson(`${API}/playercards`),
   ]);
 
-  // competitivetiers birden fazla "episode" tablosu doner; guncel olan sonuncusu.
+  // competitivetiers returns one table per episode; the current one is last.
   const current = tierSets[tierSets.length - 1];
 
   return {
     fetchedAt: Date.now(),
     ranks: current.tiers
-      .filter((t) => t.largeIcon) // Unused1 / Unused2 ikonsuz gelir, atliyoruz
+      .filter((t) => t.largeIcon) // Unused1 / Unused2 have no icon
       .map((t) => ({
         tier: t.tier,
         name: t.tierName,
@@ -71,34 +72,34 @@ function writeCache(catalog) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
     fs.writeFileSync(CACHE_FILE, JSON.stringify(catalog), 'utf8');
   } catch (err) {
-    log.warn(`Katalog onbellege yazilamadi: ${err.message}`);
+    log.warn(m('catalog.writeFailed', err.message));
   }
 }
 
 /**
- * Katalogu yukler. Onbellek tazeyse ag istegi yapmaz; ag basarisiz olursa
- * bayat onbellege geri duser, boylece internet olmadan da calisir.
+ * Loads the catalog, skipping the network while the cache is fresh and falling
+ * back to a stale cache when the request fails, so it still works offline.
  */
 export async function loadCatalog({ force = false } = {}) {
   const cached = readCache();
   const fresh = cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS;
 
   if (fresh && !force) {
-    log.debug('Katalog onbellekten yuklendi.');
+    log.debug(m('catalog.fromCache'));
     return new Catalog(cached);
   }
 
   try {
     const catalog = await downloadCatalog();
     writeCache(catalog);
-    log.ok(`Katalog guncellendi (${catalog.ranks.length} rank, ${catalog.maps.length} harita).`);
+    log.ok(m('catalog.updated', catalog.ranks.length, catalog.maps.length));
     return new Catalog(catalog);
   } catch (err) {
     if (cached) {
-      log.warn(`valorant-api.com'a ulasilamadi (${err.message}), onbellek kullaniliyor.`);
+      log.warn(m('catalog.offline', err.message));
       return new Catalog(cached);
     }
-    throw new Error(`Katalog indirilemedi ve onbellek yok: ${err.message}`);
+    throw new Error(m('catalog.unavailable', err.message));
   }
 }
 
@@ -124,9 +125,9 @@ class Catalog {
   }
 
   /**
-   * Kullanicinin config'e yazdigi rank degerini tier numarasina cevirir.
-   * Sayi ("27"), Ingilizce ad ("Immortal 3") veya yerellestirilmis ad
-   * ("Ölümsüz 3") kabul eder.
+   * Turns whatever the user wrote in config into a tier number. Accepts a
+   * number ("27"), the English name ("Immortal 3") or a localized one
+   * ("Olumsuz 3"), with or without accents.
    */
   resolveRank(input, lang = 'en') {
     if (input === null || input === undefined || input === '') return null;
@@ -145,7 +146,7 @@ class Catalog {
     return null;
   }
 
-  /** --list-ranks ciktisi icin. */
+  /** Backing data for --list-ranks. */
   listRanks(lang = 'en') {
     return this.raw.ranks.map((r) => ({
       tier: r.tier,

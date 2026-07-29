@@ -16,7 +16,7 @@ export function setDebug(on) {
 }
 
 function stamp() {
-  return new Date().toLocaleTimeString('tr-TR', { hour12: false });
+  return new Date().toTimeString().slice(0, 8);
 }
 
 function write(color, tag, args) {
@@ -24,10 +24,10 @@ function write(color, tag, args) {
 }
 
 export const log = {
-  info: (...a) => write(COLORS.cyan, '[bilgi]', a),
-  ok: (...a) => write(COLORS.green, '[tamam]', a),
-  warn: (...a) => write(COLORS.yellow, '[uyari]', a),
-  error: (...a) => write(COLORS.red, '[hata]', a),
+  info: (...a) => write(COLORS.cyan, '[info]', a),
+  ok: (...a) => write(COLORS.green, '[ok]', a),
+  warn: (...a) => write(COLORS.yellow, '[warn]', a),
+  error: (...a) => write(COLORS.red, '[error]', a),
   discord: (...a) => write(COLORS.magenta, '[discord]', a),
   riot: (...a) => write(COLORS.blue, '[riot]', a),
   debug: (...a) => {

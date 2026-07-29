@@ -1,10 +1,10 @@
 import { getPresences, getSelfPuuid } from './localApi.mjs';
 
 /**
- * presence.private base64'tur. Icerigi urune gore degisir:
- *   - VALORANT: dogrudan bir JSON nesnesi
- *   - LoL/TFT : JSON ile kodlanmis bir string (yani iki kez parse gerekir)
- * Ikisini de tolere ediyoruz, cozulemezse null donuyoruz.
+ * presence.private is base64, but what is inside depends on the product:
+ *   - VALORANT: a JSON object
+ *   - LoL/TFT : a JSON-encoded string, so it needs parsing twice
+ * Both shapes are tolerated; anything else decodes to null.
  */
 function decodePrivate(encoded) {
   if (typeof encoded !== 'string' || encoded.length === 0) return null;
@@ -34,7 +34,7 @@ function decodePrivate(encoded) {
   return typeof value === 'object' && value !== null ? value : null;
 }
 
-/** sessionLoopState yalnizca VALORANT presence'inda bulunur - urun ayirt edicimiz bu. */
+/** sessionLoopState only exists on VALORANT presences — that is our product filter. */
 function isValorantPayload(payload) {
   return payload !== null && typeof payload.sessionLoopState === 'string';
 }
@@ -46,8 +46,8 @@ export function resetPuuidCache() {
 }
 
 /**
- * VALORANT calisiyorsa ham presence verisini, calismiyorsa null doner.
- * Riot Client kapaliysa localApi RiotClientClosedError firlatir.
+ * Returns the raw VALORANT presence, or null when the game is not running.
+ * Throws RiotClientClosedError when the Riot Client itself is closed.
  */
 export async function fetchValorantPresence() {
   if (cachedPuuid === null) {
@@ -56,9 +56,8 @@ export async function fetchValorantPresence() {
 
   const presences = await getPresences();
 
-  // Once kendi puuid'imizle eslesen VALORANT kaydini ara. Riot bazen chat
-  // kimligini farkli dondurdugu icin, bulunamazsa tek gecerli VALORANT
-  // kaydina geri dusuyoruz.
+  // Prefer the VALORANT record matching our own PUUID. Riot sometimes reports a
+  // different chat identity, so fall back to the only valid VALORANT record.
   const valorant = presences.filter((p) => isValorantPayload(decodePrivate(p.private)));
   if (valorant.length === 0) return null;
 

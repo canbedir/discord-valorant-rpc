@@ -1,7 +1,7 @@
 /**
- * --demo modu: VALORANT'i acmadan Discord'da nasil gorunecegini denemek icin
- * gercek presence yerine beslenen sahte veri. Rank ayarini denerken ise yarar.
- * Her cagrida skoru ilerletir, boylece guncellemelerin gectigi de gorulur.
+ * --demo mode: synthetic presence fed in place of the real one, so the Discord
+ * output (and especially the rank override) can be checked without launching
+ * the game. The score advances on every call to prove updates get through.
  */
 const SCENES = [
   {

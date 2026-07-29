@@ -1,51 +1,52 @@
 # valorant-tracker
 
-VALORANT için Discord Rich Presence. Bağımlılık yok, derleme adımı yok — sadece Node.js.
+Discord Rich Presence for VALORANT. No dependencies, no build step — just Node.js.
 
-En belirgin özelliği: **Discord'da görünen rank'i sen seçiyorsun.** Oyunun bildirdiği
-gerçek rank'i gösterebilir, sabit bir rank yazdırabilir ya da rozeti tamamen
-kaldırabilirsin.
+The point of it: **you decide which rank Discord shows.** Display the real one the
+game reports, pin any rank you like, or drop the badge entirely.
+
+*[Türkçe README](README.tr.md)*
 
 ```
 VALORANT
-Rekabetçi — Ascent          [harita görseli]
-9 - 5                       [rank rozeti: Radiant]
+Competitive — Ascent          [map splash]
+9 - 5                         [rank badge: Radiant]
 ```
 
-## Nasıl çalışıyor
+## How it works
 
-Riot Client açıkken şu dosyaya yerel API bilgilerini yazıyor:
+While the Riot Client is running it writes its local API credentials to:
 
 ```
 %LOCALAPPDATA%\Riot Games\Riot Client\Config\lockfile
 ```
 
-Buradaki port ve şifreyle `127.0.0.1` üzerindeki `/chat/v4/presences` ucundan kendi
-oturum verimizi okuyoruz. Gelen `private` alanı base64'lü bir JSON: içinde harita,
-kuyruk, skor, parti boyutu ve `competitiveTier` var. Bu veri Discord'un IPC named
-pipe'ına (`\\?\pipe\discord-ipc-0`) Rich Presence olarak yazılıyor.
+Using the port and password from that file, we read our own session from
+`/chat/v4/presences` on `127.0.0.1`. The `private` field it returns is base64'd
+JSON containing the map, queue, score, party size and `competitiveTier`. That gets
+written to Discord's IPC named pipe (`\\?\pipe\discord-ipc-0`) as Rich Presence.
 
-Hiçbir şey dışarı gitmiyor: tek uzak istek, rank/harita görsellerini almak için
-haftada bir yapılan [valorant-api.com](https://valorant-api.com) çağrısı. Riot
-hesabına giriş yapılmıyor, şifre istenmiyor, oyun dosyalarına dokunulmuyor.
+Nothing is sent anywhere: the only remote request is a weekly call to
+[valorant-api.com](https://valorant-api.com) for rank and map images. No Riot login,
+no password, no touching game files.
 
-## Kurulum
+## Setup
 
 ### 1. Node.js
 
-Node 18 veya üstü gerekiyor. `node --version` ile kontrol et, yoksa
-[nodejs.org](https://nodejs.org)'dan kur.
+Node 18 or newer. Check with `node --version`, install from
+[nodejs.org](https://nodejs.org) if missing.
 
-### 2. Discord uygulaması oluştur
+### 2. Create a Discord application
 
-Rich Presence'ta görünen **başlık**, Discord uygulamanın adıdır. "VALORANT" yazması
-için uygulamayı o isimle oluşturman gerekiyor.
+The **title** shown in Rich Presence is your Discord application's name. For it to
+read "VALORANT", the application has to be named that.
 
 1. [discord.com/developers/applications](https://discord.com/developers/applications) → **New Application**
-2. İsim: `VALORANT`
-3. **General Information** sekmesindeki **Application ID**'yi kopyala
+2. Name it `VALORANT`
+3. Copy the **Application ID** from **General Information**
 
-### 3. Yapılandır
+### 3. Configure
 
 ```bash
 git clone https://github.com/canbedir/valorant-tracker
@@ -53,115 +54,127 @@ cd valorant-tracker
 node src/index.mjs
 ```
 
-İlk çalıştırmada `config.json` otomatik oluşur. İçindeki `discordClientId` alanına
-kopyaladığın Application ID'yi yapıştır.
+The first run creates `config.json`. Paste your Application ID into
+`discordClientId`.
 
-### 4. Çalıştır
+### 4. Run
 
 ```bash
 npm start          # normal
-start.bat          # çift tıkla
-npm run demo       # VALORANT açmadan dene
-npm run ranks      # geçerli rank isimlerini listele
+start.bat          # double-click on Windows
+npm run demo       # try it without launching VALORANT
+npm run ranks      # list valid rank names
 ```
 
-## Rank ayarı
+## Rank settings
 
-`config.json` içindeki `rank` bloğu:
+The `rank` block in `config.json`:
 
 ```json
 "rank": {
-  "mode": "override",
+  "mode": "real",
   "override": "Radiant",
   "overrideLeaderboardPosition": 0,
   "showLeaderboardPosition": false
 }
 ```
 
-| `mode` | Ne yapar |
+| `mode` | Behaviour |
 | --- | --- |
-| `real` | Oyunun bildirdiği gerçek rank'i gösterir |
-| `override` | `override` alanına yazdığın rank'i gösterir |
-| `hide` | Rank rozetini hiç göstermez |
+| `real` | Shows the rank the game actually reports |
+| `override` | Shows whatever you put in `override` |
+| `hide` | No rank badge at all |
 
-`override` değeri esnek — hepsi aynı sonucu verir:
+`override` is forgiving — these are all the same tier:
 
 ```json
 "override": 27
 "override": "Radiant"
+"override": "Immortal 3"
 "override": "Ölümsüz 3"
-"override": "olumsuz 3"
 ```
 
-Tam liste için `npm run ranks`.
+Run `npm run ranks` for the full list.
 
-`overrideLeaderboardPosition` sıfırdan büyükse ve `showLeaderboardPosition` açıksa
-rozetin yanında `Radiant #1` gibi bir sıralama yazar.
+When `overrideLeaderboardPosition` is above zero and `showLeaderboardPosition` is
+on, the badge reads something like `Radiant #1`.
 
-## Diğer ayarlar
+## Language
+
+`language` controls both the Discord presence text and the console output:
 
 ```json
-"language": "tr",              // "tr" veya "en"
-"pollIntervalMs": 3000,        // presence kaç ms'de bir okunsun
+"language": "en"   // or "tr"
+```
+
+Adding another language means adding one entry to `MESSAGES` in
+[`src/i18n.mjs`](src/i18n.mjs) and one to `STRINGS` / `QUEUES` in
+[`src/data/strings.mjs`](src/data/strings.mjs). Missing keys fall back to English,
+so a partial translation still runs.
+
+## Other settings
+
+```json
+"pollIntervalMs": 3000,        // how often presence is read
 
 "display": {
-  "showScore": true,           // maç skoru (9 - 5)
-  "showParty": true,           // menüde parti boyutu
-  "showAccountLevel": false,   // hesap seviyesi
-  "showRankInMenus": true,     // menüdeyken de rank rozeti
+  "showScore": true,           // match score (9 - 5)
+  "showParty": true,           // party size in menus
+  "showAccountLevel": false,   // account level
+  "showRankInMenus": true,     // rank badge in menus too
   "largeImage": "map",         // "map" | "card" | "rank"
-  "buttons": []                // en fazla 2: [{ "label": "...", "url": "..." }]
+  "buttons": []                // up to 2: [{ "label": "...", "url": "..." }]
 },
 
 "idle": {
-  "showWhenGameClosed": false, // VALORANT kapalıyken de bir şey göster
-  "text": "VALORANT kapalı"
+  "showWhenGameClosed": false, // show something while VALORANT is closed
+  "text": "VALORANT closed"
 }
 ```
 
-`largeImage` seçenekleri: `map` maç sırasında harita görselini, menüde oyuncu kartını
-kullanır. `card` her zaman oyuncu kartı, `rank` her zaman büyük rank ikonu gösterir.
+`largeImage`: `map` uses the map splash during a match and the player card in
+menus. `card` always uses the player card, `rank` always uses the large rank icon.
 
-## Görseller
+## Images
 
-Varsayılan olarak (`assets.source: "url"`) görseller doğrudan valorant-api.com
-bağlantısı olarak gönderilir — Discord Developer Portal'a hiçbir şey yüklemen
-gerekmez.
+By default (`assets.source: "url"`) images are sent as valorant-api.com links and
+Discord proxies them — you don't upload anything to the Developer Portal.
 
-Görseller görünmezse Discord'un kendi asset sistemine geçebilirsin:
+If images don't render, switch to Discord's own asset system:
 
 ```bash
 npm run download-assets
 ```
 
-`assets/downloaded/` klasörüne dosyaları indirir. Dosya adları doğrudan asset
-anahtarıdır (`rank_27.png` → `rank_27`). Bunları Developer Portal → **Rich Presence**
-→ **Art Assets** bölümüne sürükleyip bırak, sonra:
+This fills `assets/downloaded/`. Each filename *is* the asset key
+(`rank_27.png` → `rank_27`). Drag them into Developer Portal → **Rich Presence** →
+**Art Assets**, then:
 
 ```json
 "assets": { "source": "key", "keyPrefix": "" }
 ```
 
-## Sorun giderme
+## Troubleshooting
 
-**"Discord IPC soketi bulunamadı"** — Discord'un masaüstü uygulaması açık olmalı.
-Tarayıcı sürümü Rich Presence sunmuyor.
+**"No Discord IPC socket found"** — the Discord desktop app must be running. The
+browser version does not expose Rich Presence.
 
-**"Invalid Client ID"** — `discordClientId` yanlış. Bot token'ı değil, **Application
-ID** olacak (17-20 haneli sayı).
+**"Invalid Client ID"** — `discordClientId` is wrong. It's the **Application ID**
+(17-20 digits), not a bot token.
 
-**Durum hiç görünmüyor** — Discord → Ayarlar → **Etkinlik Gizliliği** → "Etkinlik
-durumunu göster" açık olmalı. Ayrıca kendi profilinde Rich Presence'ı göremezsin;
-başka bir hesaptan bak veya sunucudaki üye listesine bak.
+**Nothing shows up** — Discord → Settings → **Activity Privacy** → "Share your
+detected activities" must be on. Also, you can't see your own Rich Presence; check
+from another account or look at a server's member list.
 
-**Presence okunamıyor** — Riot Client'ın açık olması yeterli, ama `sessionLoopState`
-yalnızca VALORANT çalışırken gelir. Sadece LoL açıksa durum boş kalır (beklenen).
+**Presence can't be read** — the Riot Client being open is enough to connect, but
+`sessionLoopState` only appears while VALORANT is running. With only LoL open the
+presence stays empty, which is expected.
 
-**Rank rozeti çıkmıyor** — `rank.mode` `hide` olabilir, ya da menüdeyken
-`display.showRankInMenus` kapalıdır.
+**No rank badge** — `rank.mode` may be `hide`, or `display.showRankInMenus` is off
+while you're in menus.
 
-Ne olup bittiğini görmek için: `node src/index.mjs --debug`
+To see what's happening: `node src/index.mjs --debug`
 
-## Lisans
+## License
 
 MIT

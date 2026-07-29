@@ -2,10 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
- * Riot Client acikken su dosyayi yazar:
+ * While the Riot Client is running it writes its local API credentials to:
  *   %LOCALAPPDATA%\Riot Games\Riot Client\Config\lockfile
- * Icerik: name:pid:port:password:protocol
- * Client kapaninca dosya silinir, yani varligi = "Riot Client acik".
+ * Format: name:pid:port:password:protocol
+ *
+ * The file is deleted on exit, so its presence doubles as "client is running".
  */
 export const LOCKFILE_PATH = path.join(
   process.env.LOCALAPPDATA ?? '',

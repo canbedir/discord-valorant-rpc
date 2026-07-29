@@ -1,11 +1,11 @@
 {
-  "discordClientId": "BURAYA_DISCORD_APPLICATION_ID",
+  "discordClientId": "YOUR_DISCORD_APPLICATION_ID",
 
-  "language": "tr",
+  "language": "en",
   "pollIntervalMs": 3000,
 
   "rank": {
-    "mode": "override",
+    "mode": "real",
     "override": "Radiant",
     "overrideLeaderboardPosition": 0,
     "showLeaderboardPosition": false
@@ -22,7 +22,7 @@
 
   "idle": {
     "showWhenGameClosed": false,
-    "text": "VALORANT kapali"
+    "text": "VALORANT closed"
   },
 
   "assets": {
