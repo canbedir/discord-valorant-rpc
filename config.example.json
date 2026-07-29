@@ -1,0 +1,31 @@
+{
+  "discordClientId": "BURAYA_DISCORD_APPLICATION_ID",
+
+  "language": "tr",
+  "pollIntervalMs": 3000,
+
+  "rank": {
+    "mode": "override",
+    "override": "Radiant",
+    "showLeaderboardPosition": false
+  },
+
+  "display": {
+    "showScore": true,
+    "showParty": true,
+    "showAccountLevel": false,
+    "showRankInMenus": true,
+    "largeImage": "map",
+    "buttons": []
+  },
+
+  "idle": {
+    "showWhenGameClosed": false,
+    "text": "VALORANT kapali"
+  },
+
+  "assets": {
+    "source": "url",
+    "keyPrefix": ""
+  }
+}
