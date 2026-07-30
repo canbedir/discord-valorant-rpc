@@ -45,30 +45,9 @@ Discord Application ID:
 2. Name it **`VALORANT`** — that name is the title Discord displays
 3. Copy the **Application ID** from *General Information*
 
-```
-──────────────────────────────────
-  discord-valorant-rpc — Setup
-──────────────────────────────────
+Then just run it — the wizard handles the rest:
 
-Step 1/3  Discord Application ID
-  > 1234567890123456789
-
-Step 2/3  Language
-     [1] English
-     [2] Türkçe
-  > 1
-
-Step 3/3  Which rank should Discord show?
-     [1] My real rank
-     [2] A rank I choose
-     [3] No rank badge
-  > 2
-
-     Rank name or tier number (e.g. Radiant, Immortal 3, 27)
-  > Immortal 3
-
-  Saved to config.json
-```
+<img src="images/step3-custom-rank.png" width="760" alt="The setup wizard in a terminal: step 1 asks for the Discord Application ID, step 2 offers English or Türkçe, step 3 asks which rank to show and accepts a rank name">
 
 That's it. Re-run the wizard any time with `npm run setup`.
 
