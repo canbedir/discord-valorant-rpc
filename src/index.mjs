@@ -1,14 +1,16 @@
+import { stdin } from 'node:process';
 import { loadConfig } from './config.mjs';
 import { loadCatalog } from './valorantData.mjs';
-import { createTranslator } from './data/strings.mjs';
 import { fetchValorantPresence, resetPuuidCache } from './riot/presence.mjs';
 import { DiscordIPC } from './discord/ipc.mjs';
-import { buildActivity, buildIdleActivity } from './activity.mjs';
+import { buildActivity, buildIdleActivity, resetOverrideWarning } from './activity.mjs';
 import { nextDemoPresence } from './demoPresence.mjs';
+import { runSetup, changeRank, describeRank } from './setup.mjs';
 import { log, setDebug, COLORS } from './log.mjs';
-import { m, setLanguage } from './i18n.mjs';
+import { m, setLanguage, createTranslator } from './i18n.mjs';
 
 const RECONNECT_DELAY_MS = 15000;
+const CTRL_C = '\u0003';
 
 function printRanks(catalog, lang) {
   console.log(`\n${m('ranks.header')}\n`);
@@ -25,22 +27,21 @@ async function main() {
   const args = process.argv.slice(2);
   if (args.includes('--debug')) setDebug(true);
 
+  const { config, needsSetup } = loadConfig();
+  const catalog = await loadCatalog();
+
   if (args.includes('--list-ranks')) {
-    let lang = 'en';
-    try {
-      lang = loadConfig().language;
-    } catch {
-      // The config may not be set up yet; list the ranks anyway.
-    }
-    setLanguage(lang);
-    printRanks(await loadCatalog(), lang);
+    printRanks(catalog, config.language);
     return;
   }
 
+  if (needsSetup || args.includes('--setup')) {
+    await runSetup(config, catalog);
+    setLanguage(config.language);
+  }
+
   const demoMode = args.includes('--demo');
-  const config = loadConfig();
   const t = createTranslator(config.language);
-  const catalog = await loadCatalog();
 
   const ipc = new DiscordIPC(config.discordClientId);
   let connected = false;
@@ -72,8 +73,10 @@ async function main() {
   let lastSignature;
   let startedAt = Date.now();
   let riotWasUp = true;
+  let paused = false;
 
   async function tick() {
+    if (paused) return;
     if (!(await ensureDiscord())) return;
 
     let presence = null;
@@ -131,7 +134,7 @@ async function main() {
   if (demoMode) log.warn(m('app.demo'));
   log.info(
     config.rank.mode === 'override'
-      ? m('app.rankOverride', config.rank.override)
+      ? m('app.rankOverride', describeRank(config, catalog))
       : m('app.rankMode', config.rank.mode),
   );
 
@@ -145,6 +148,7 @@ async function main() {
     if (shuttingDown) return;
     shuttingDown = true;
     clearInterval(timer);
+    detachHotkeys();
     log.info(m('app.shuttingDown'));
     if (connected) ipc.clearActivity();
     // Give the clearing frame a moment to reach the pipe.
@@ -153,6 +157,51 @@ async function main() {
       process.exit(0);
     }, 300);
   };
+
+  /**
+   * Raw mode lets a single keypress act without Enter, which is what makes
+   * changing the rank feel immediate. It also swallows Ctrl+C, so that has
+   * to be handled by hand. The listener is detached while a prompt is open,
+   * because readline needs stdin back in line mode.
+   */
+  async function onKey(key) {
+    if (key === CTRL_C || key === 'q' || key === 'Q') {
+      shutdown();
+      return;
+    }
+    if (key !== 'r' && key !== 'R') return;
+
+    paused = true;
+    detachHotkeys();
+    try {
+      await changeRank(config, catalog);
+      resetOverrideWarning();
+      lastPayload = undefined; // force the next tick to resend
+    } catch (err) {
+      log.error(err.message);
+    } finally {
+      paused = false;
+      attachHotkeys();
+    }
+    await tick();
+  }
+
+  function attachHotkeys() {
+    if (!stdin.isTTY) return;
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.setEncoding('utf8');
+    stdin.on('data', onKey);
+  }
+
+  function detachHotkeys() {
+    stdin.off('data', onKey);
+    if (stdin.isTTY) stdin.setRawMode(false);
+    stdin.pause();
+  }
+
+  attachHotkeys();
+  if (stdin.isTTY) log.info(m('setup.hotkeys'));
 
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);

@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Node ${{ matrix.node }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node: ['18', '20', '22', '24']
+        # The tracker only runs on Windows, but the logic under test is
+        # platform independent — this one job guards against path or
+        # line-ending assumptions creeping in.
+        include:
+          - os: windows-latest
+            node: '20'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Check syntax
+        shell: bash
+        run: |
+          find src test -name '*.mjs' -print0 | xargs -0 -n1 node --check
+
+      - name: Run tests
+        run: node --test

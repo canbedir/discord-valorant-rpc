@@ -2,8 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from './config.mjs';
 import { log } from './log.mjs';
-import { m } from './i18n.mjs';
-import { localizeRankName } from './data/strings.mjs';
+import { m, localizeRankName } from './i18n.mjs';
 
 const CACHE_DIR = path.join(ROOT, '.cache');
 const CACHE_FILE = path.join(CACHE_DIR, 'catalog.json');

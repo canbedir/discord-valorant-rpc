@@ -1,6 +1,5 @@
-import { localizeRankName } from './data/strings.mjs';
 import { log } from './log.mjs';
-import { m } from './i18n.mjs';
+import { m, localizeRankName } from './i18n.mjs';
 
 const MAX_FIELD = 128;
 
@@ -13,26 +12,27 @@ function clamp(text) {
   return value.length > MAX_FIELD ? `${value.slice(0, MAX_FIELD - 1)}…` : value;
 }
 
-function slug(text) {
-  return String(text)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-}
-
 let overrideWarned = false;
+
+/** Called after the rank is reconfigured, so a new bad value warns again. */
+export function resetOverrideWarning() {
+  overrideWarned = false;
+}
 
 /**
  * Decides which rank to display.
  *   real     -> presence.competitiveTier, whatever the game reports
  *   override -> a fixed tier from config, regardless of the real one
  *   hide     -> no rank badge at all
+ *
+ * The leaderboard number follows the same split: the real one in real mode,
+ * the configured one in override mode. Either is shown only when above zero.
  */
 export function resolveDisplayRank(presence, config, catalog, lang) {
   if (config.rank.mode === 'hide') return null;
 
   let tier;
-  let leaderboard = 0;
+  let leaderboard;
 
   if (config.rank.mode === 'override') {
     tier = catalog.resolveRank(config.rank.override, lang);
@@ -42,35 +42,23 @@ export function resolveDisplayRank(presence, config, catalog, lang) {
         log.warn(m('rank.unknownOverride', config.rank.override));
       }
       tier = presence.competitiveTier;
+      leaderboard = presence.leaderboardPosition;
     } else {
-      leaderboard = Number(config.rank.overrideLeaderboardPosition) || 0;
+      leaderboard = config.rank.leaderboardPosition;
     }
   } else {
     tier = presence.competitiveTier;
-    leaderboard = Number(presence.leaderboardPosition) || 0;
+    leaderboard = presence.leaderboardPosition;
   }
 
   const rank = catalog.rank(tier ?? 0);
   if (!rank) return null;
 
   let label = localizeRankName(rank.name, lang);
-  if (config.rank.showLeaderboardPosition && leaderboard > 0) {
-    label += ` #${leaderboard}`;
-  }
+  const position = Number(leaderboard) || 0;
+  if (position > 0) label += ` #${position}`;
 
-  return { tier: rank.tier, icon: rank.icon, label };
-}
-
-/**
- * Produces the image reference. In "url" mode the valorant-api link is sent
- * straight through and Discord proxies it, which avoids uploading anything;
- * "key" mode expects assets uploaded to the Discord application instead.
- */
-function asset(config, { url, key }) {
-  if (config.assets.source === 'key') {
-    return key ? `${config.assets.keyPrefix}${key}` : undefined;
-  }
-  return url ?? undefined;
+  return { icon: rank.icon, label };
 }
 
 function partyText(presence, t) {
@@ -87,6 +75,10 @@ function scoreText(presence) {
 
 /**
  * presence + config -> a Discord activity object.
+ *
+ * Images are plain valorant-api URLs: Discord re-hosts whatever it is given
+ * through its own proxy, so nothing has to be uploaded to the application.
+ *
  * startedAt is tracked by the main loop so the elapsed timer survives polls.
  */
 export function buildActivity({ presence, catalog, config, t, startedAt }) {
@@ -146,33 +138,30 @@ export function buildActivity({ presence, catalog, config, t, startedAt }) {
 
   // Large image: the map while in a match, the player card while in menus.
   const cardUrl = catalog.card(presence.playerCardId);
-  const wantsMap = config.display.largeImage === 'map' && inMatch && mapInfo;
+  const showRankLarge = config.display.largeImage === 'rank' && rank;
+  const showMapLarge = config.display.largeImage === 'map' && inMatch && mapInfo;
 
-  let large;
+  let largeImage;
   let largeText;
-  if (config.display.largeImage === 'rank' && rank) {
-    large = { url: rank.icon, key: `rank_${rank.tier}` };
+  if (showRankLarge) {
+    largeImage = rank.icon;
     largeText = rank.label;
-  } else if (wantsMap) {
-    large = { url: mapInfo.splash, key: `map_${slug(mapInfo.name)}` };
+  } else if (showMapLarge) {
+    largeImage = mapInfo.splash;
     largeText = mapInfo.name;
   } else if (cardUrl) {
-    large = { url: cardUrl, key: 'valorant' };
-    largeText = t('playing');
-  } else {
-    large = { url: undefined, key: 'valorant' };
+    largeImage = cardUrl;
     largeText = t('playing');
   }
 
-  const showRankBadge =
-    rank && (inMatch || config.display.showRankInMenus) && config.display.largeImage !== 'rank';
-
-  const assets = {
-    large_image: asset(config, large),
-    large_text: clamp(largeText),
-  };
-  if (showRankBadge) {
-    assets.small_image = asset(config, { url: rank.icon, key: `rank_${rank.tier}` });
+  const assets = {};
+  if (largeImage) {
+    assets.large_image = largeImage;
+    assets.large_text = clamp(largeText);
+  }
+  // The badge would be redundant when the rank is already the large image.
+  if (rank && !showRankLarge && (inMatch || config.display.showRankInMenus)) {
+    assets.small_image = rank.icon;
     assets.small_text = clamp(rank.label);
   }
 
@@ -181,8 +170,8 @@ export function buildActivity({ presence, catalog, config, t, startedAt }) {
     details: clamp(details),
     state: clamp(state),
     timestamps: { start: startedAt },
-    assets,
   };
+  if (Object.keys(assets).length > 0) activity.assets = assets;
 
   const buttons = (config.display.buttons ?? [])
     .filter((b) => b?.label && b?.url)
@@ -199,11 +188,7 @@ export function buildIdleActivity({ config, t, startedAt }) {
     type: 0,
     details: clamp(config.idle.text) ?? t('playing'),
     timestamps: { start: startedAt },
-    assets: {
-      large_image: asset(config, { url: undefined, key: 'valorant' }),
-      large_text: t('playing'),
-    },
   };
 }
 
-export { clamp, slug };
+export { clamp };

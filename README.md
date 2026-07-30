@@ -1,180 +1,181 @@
-# valorant-tracker
+<div align="center">
 
-Discord Rich Presence for VALORANT. No dependencies, no build step — just Node.js.
+# discord-valorant-rpc
 
-The point of it: **you decide which rank Discord shows.** Display the real one the
-game reports, pin any rank you like, or drop the badge entirely.
+**Discord Rich Presence for VALORANT — and you pick the rank it shows.**
 
-*[Türkçe README](README.tr.md)*
+[![CI](https://github.com/canbedir/discord-valorant-rpc/actions/workflows/ci.yml/badge.svg)](https://github.com/canbedir/discord-valorant-rpc/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/canbedir/discord-valorant-rpc?color=1f6feb)](https://github.com/canbedir/discord-valorant-rpc/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/canbedir/discord-valorant-rpc/total?color=2da44e)](https://github.com/canbedir/discord-valorant-rpc/releases)
+[![License](https://img.shields.io/badge/license-MIT-1f6feb)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%E2%89%A518-5FA04E?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)](#)
+[![Dependencies](https://img.shields.io/badge/dependencies-0-2da44e)](package.json)
+
+</div>
 
 ```
 VALORANT
-Competitive — Ascent          [map splash]
-9 - 5                         [rank badge: Radiant]
+Competitive — Ascent          ← map splash
+9 - 5                         ← Immortal 3 badge
 ```
 
-## How it works
+No dependencies, no build step, no Riot login. Set it up once from the console
+and forget about it.
 
-While the Riot Client is running it writes its local API credentials to:
+## Install
 
-```
-%LOCALAPPDATA%\Riot Games\Riot Client\Config\lockfile
-```
+### Download (easiest)
 
-Using the port and password from that file, we read our own session from
-`/chat/v4/presences` on `127.0.0.1`. The `private` field it returns is base64'd
-JSON containing the map, queue, score, party size and `competitiveTier`. That gets
-written to Discord's IPC named pipe (`\\?\pipe\discord-ipc-0`) as Rich Presence.
+1. Grab the latest zip from [**Releases**](https://github.com/canbedir/discord-valorant-rpc/releases/latest) and extract it anywhere.
+2. Double-click **`start.bat`**. If Node.js is missing it offers to install it for you.
+3. The console walks you through the rest — Application ID, language, rank.
 
-Nothing is sent anywhere: the only remote request is a weekly call to
-[valorant-api.com](https://valorant-api.com) for rank and map images. No Riot login,
-no password, no touching game files.
-
-## Setup
-
-### 1. Node.js
-
-Node 18 or newer. Check with `node --version`, install from
-[nodejs.org](https://nodejs.org) if missing.
-
-### 2. Create a Discord application
-
-The **title** shown in Rich Presence is your Discord application's name. For it to
-read "VALORANT", the application has to be named that.
-
-1. [discord.com/developers/applications](https://discord.com/developers/applications) → **New Application**
-2. Name it `VALORANT`
-3. Copy the **Application ID** from **General Information**
-
-### 3. Configure
+### From source
 
 ```bash
-git clone https://github.com/canbedir/valorant-tracker
-cd valorant-tracker
-node src/index.mjs
+git clone https://github.com/canbedir/discord-valorant-rpc
+cd discord-valorant-rpc
+npm start
 ```
 
-The first run creates `config.json`. Paste your Application ID into
-`discordClientId`.
+## First run
 
-### 4. Run
+The setup wizard asks three things. The only one you need to prepare is the
+Discord Application ID:
 
-```bash
-npm start          # normal
-start.bat          # double-click on Windows
-npm run demo       # try it without launching VALORANT
-npm run ranks      # list valid rank names
+1. Open [discord.com/developers/applications](https://discord.com/developers/applications) → **New Application**
+2. Name it **`VALORANT`** — that name is the title Discord displays
+3. Copy the **Application ID** from *General Information*
+
+```
+──────────────────────────────────
+  discord-valorant-rpc — Setup
+──────────────────────────────────
+
+Step 1/3  Discord Application ID
+  > 1234567890123456789
+
+Step 2/3  Language
+     [1] English
+     [2] Türkçe
+  > 1
+
+Step 3/3  Which rank should Discord show?
+     [1] My real rank
+     [2] A rank I choose
+     [3] No rank badge
+  > 2
+
+     Rank name or tier number (e.g. Radiant, Immortal 3, 27)
+  > Immortal 3
+
+  Saved to config.json
 ```
 
-## Rank settings
+That's it. Re-run the wizard any time with `npm run setup`.
 
-The `rank` block in `config.json`:
+## Changing the rank
 
-```json
-"rank": {
-  "mode": "real",
-  "override": "Radiant",
-  "overrideLeaderboardPosition": 0,
-  "showLeaderboardPosition": false
-}
-```
+While it's running, press **`r`**. Pick a new rank, and Discord updates
+immediately — no restart.
 
-| `mode` | Behaviour |
+| Mode | Shows |
 | --- | --- |
-| `real` | Shows the rank the game actually reports |
-| `override` | Shows whatever you put in `override` |
-| `hide` | No rank badge at all |
+| My real rank | Whatever the game reports |
+| A rank I choose | Any tier, from Unranked to Radiant |
+| No rank badge | Nothing |
 
-`override` is forgiving — these are all the same tier:
+Rank names and tier numbers both work: `Radiant`, `Immortal 3`, `27`.
+`npm run ranks` lists them all.
 
-```json
-"override": 27
-"override": "Radiant"
-"override": "Immortal 3"
-"override": "Ölümsüz 3"
-```
+Press **`q`** to quit.
 
-Run `npm run ranks` for the full list.
+## Settings
 
-When `overrideLeaderboardPosition` is above zero and `showLeaderboardPosition` is
-on, the badge reads something like `Radiant #1`.
-
-## Language
-
-`language` controls both the Discord presence text and the console output:
+Everything the wizard writes lives in `config.json`, and there are a few extras
+you can only set by editing it:
 
 ```json
-"language": "en"   // or "tr"
-```
+{
+  "discordClientId": "1234567890123456789",
+  "language": "en",
+  "pollIntervalMs": 3000,
 
-Adding another language means adding one entry to `MESSAGES` in
-[`src/i18n.mjs`](src/i18n.mjs) and one to `STRINGS` / `QUEUES` in
-[`src/data/strings.mjs`](src/data/strings.mjs). Missing keys fall back to English,
-so a partial translation still runs.
+  "rank": {
+    "mode": "real",
+    "override": "Radiant",
+    "leaderboardPosition": 0
+  },
 
-## Other settings
+  "display": {
+    "showScore": true,
+    "showParty": true,
+    "showAccountLevel": false,
+    "showRankInMenus": true,
+    "largeImage": "map",
+    "buttons": []
+  },
 
-```json
-"pollIntervalMs": 3000,        // how often presence is read
-
-"display": {
-  "showScore": true,           // match score (9 - 5)
-  "showParty": true,           // party size in menus
-  "showAccountLevel": false,   // account level
-  "showRankInMenus": true,     // rank badge in menus too
-  "largeImage": "map",         // "map" | "card" | "rank"
-  "buttons": []                // up to 2: [{ "label": "...", "url": "..." }]
-},
-
-"idle": {
-  "showWhenGameClosed": false, // show something while VALORANT is closed
-  "text": "VALORANT closed"
+  "idle": {
+    "showWhenGameClosed": false,
+    "text": "VALORANT closed"
+  }
 }
 ```
 
-`largeImage`: `map` uses the map splash during a match and the player card in
-menus. `card` always uses the player card, `rank` always uses the large rank icon.
+- **`rank.leaderboardPosition`** — above zero shows `Radiant #3`
+- **`display.largeImage`** — `map` (map in a match, player card in menus), `card`, or `rank`
+- **`display.buttons`** — up to two: `[{ "label": "Profile", "url": "https://..." }]`
+- **`language`** — `en` or `tr`, applies to both Discord and the console
 
-## Images
-
-By default (`assets.source: "url"`) images are sent as valorant-api.com links and
-Discord proxies them — you don't upload anything to the Developer Portal.
-
-If images don't render, switch to Discord's own asset system:
+## Commands
 
 ```bash
-npm run download-assets
-```
-
-This fills `assets/downloaded/`. Each filename *is* the asset key
-(`rank_27.png` → `rank_27`). Drag them into Developer Portal → **Rich Presence** →
-**Art Assets**, then:
-
-```json
-"assets": { "source": "key", "keyPrefix": "" }
+npm start          # run it
+npm run setup      # re-run the wizard
+npm run ranks      # list every rank name
+npm run demo       # preview in Discord without launching VALORANT
+npm run debug      # verbose output
+npm test           # run the test suite
 ```
 
 ## Troubleshooting
 
-**"No Discord IPC socket found"** — the Discord desktop app must be running. The
-browser version does not expose Rich Presence.
+**Nothing appears in Discord.** Discord → Settings → **Activity Privacy** →
+"Share your detected activities" has to be on. You also can't see your own Rich
+Presence — check from another account or a server member list.
 
-**"Invalid Client ID"** — `discordClientId` is wrong. It's the **Application ID**
-(17-20 digits), not a bot token.
+**"No Discord IPC socket found".** The Discord *desktop app* must be running.
+The browser version has no Rich Presence.
 
-**Nothing shows up** — Discord → Settings → **Activity Privacy** → "Share your
-detected activities" must be on. Also, you can't see your own Rich Presence; check
-from another account or look at a server's member list.
+**"Invalid Client ID".** That's the Application ID (17–20 digits), not a bot
+token.
 
-**Presence can't be read** — the Riot Client being open is enough to connect, but
-`sessionLoopState` only appears while VALORANT is running. With only LoL open the
-presence stays empty, which is expected.
+**Presence stays empty.** VALORANT itself has to be running, not just the Riot
+Client. With only League of Legends open, nothing is shown — that's expected.
 
-**No rank badge** — `rank.mode` may be `hide`, or `display.showRankInMenus` is off
-while you're in menus.
+Run `npm run debug` to see exactly what is being sent.
 
-To see what's happening: `node src/index.mjs --debug`
+## How it works
+
+While the Riot Client runs it writes its local API port and password to a
+lockfile. discord-valorant-rpc reads those, asks `/chat/v4/presences` on
+`127.0.0.1` for your own session — map, queue, score, party size, rank — and
+writes it to Discord's IPC named pipe as Rich Presence.
+
+Rank and map images come from [valorant-api.com](https://valorant-api.com),
+fetched once a week and cached to disk so it also works offline. Nothing else
+leaves your machine: no Riot login, no credentials, no game files touched.
+
+## Notes
+
+The rank override is cosmetic and local. It changes the badge on your own
+Discord presence and nothing else — not the game, not your account, not your
+actual rank.
+
+Not affiliated with Riot Games.
 
 ## License
 
-MIT
+[MIT](LICENSE)

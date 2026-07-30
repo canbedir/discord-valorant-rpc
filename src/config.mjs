@@ -7,7 +7,6 @@ import { m, setLanguage } from './i18n.mjs';
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const CONFIG_PATH = path.join(ROOT, 'config.json');
-const EXAMPLE_PATH = path.join(ROOT, 'config.example.json');
 
 const DEFAULTS = {
   discordClientId: '',
@@ -16,8 +15,7 @@ const DEFAULTS = {
   rank: {
     mode: 'real',
     override: 'Radiant',
-    overrideLeaderboardPosition: 0,
-    showLeaderboardPosition: false,
+    leaderboardPosition: 0,
   },
   display: {
     showScore: true,
@@ -31,11 +29,12 @@ const DEFAULTS = {
     showWhenGameClosed: false,
     text: 'VALORANT closed',
   },
-  assets: {
-    source: 'url',
-    keyPrefix: '',
-  },
 };
+
+/** A Discord Application ID is a snowflake: 17-20 digits. */
+export function isValidClientId(value) {
+  return /^\d{17,20}$/.test(String(value ?? '').trim());
+}
 
 function deepMerge(base, patch) {
   if (patch === null || patch === undefined) return base;
@@ -50,39 +49,33 @@ function deepMerge(base, patch) {
 }
 
 /**
- * Creates config.json from the example on first run, then merges it over the
- * defaults so an older config keeps working when new fields are introduced.
+ * Reads config.json, merging it over the defaults so an older config keeps
+ * working when new fields are introduced.
  *
- * The language is applied before anything is logged, otherwise the very first
+ * Missing or invalid settings are reported through `needsSetup` rather than
+ * thrown, so the caller can run the interactive wizard instead of failing.
+ * The language is applied before anything is logged, otherwise the first
  * messages a new user sees would ignore their setting.
  */
 export function loadConfig() {
-  const isFirstRun = !fs.existsSync(CONFIG_PATH);
-  if (isFirstRun) {
-    fs.copyFileSync(EXAMPLE_PATH, CONFIG_PATH);
-  }
+  let raw = {};
+  let unreadable = null;
 
-  let raw;
-  try {
-    raw = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
-  } catch (err) {
-    setLanguage(DEFAULTS.language);
-    throw new Error(m('config.unreadable', err.message));
+  if (fs.existsSync(CONFIG_PATH)) {
+    try {
+      raw = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    } catch (err) {
+      unreadable = err.message;
+    }
   }
 
   setLanguage(raw.language ?? DEFAULTS.language);
 
-  if (isFirstRun) {
-    log.warn(m('config.created'));
-    log.warn(m('config.needsClientId', CONFIG_PATH));
+  if (unreadable) {
+    log.warn(m('config.unreadable', unreadable));
   }
 
   const config = deepMerge(DEFAULTS, raw);
-
-  if (!config.discordClientId || !/^\d{17,20}$/.test(String(config.discordClientId))) {
-    throw new Error(m('config.badClientId'));
-  }
-
   config.pollIntervalMs = Math.max(1000, Number(config.pollIntervalMs) || 3000);
 
   const validModes = ['real', 'override', 'hide'];
@@ -91,7 +84,12 @@ export function loadConfig() {
     config.rank.mode = 'real';
   }
 
-  return config;
+  return { config, needsSetup: !isValidClientId(config.discordClientId) };
+}
+
+/** Writes config.json with the indentation a human would use. */
+export function saveConfig(config) {
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf8');
 }
 
 export { CONFIG_PATH, DEFAULTS };

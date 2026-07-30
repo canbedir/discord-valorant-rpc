@@ -1,19 +1,38 @@
 {
-  "name": "valorant-tracker",
+  "name": "discord-valorant-rpc",
   "version": "1.0.0",
-  "description": "Dependency-free Discord Rich Presence for VALORANT, with a configurable rank display",
+  "description": "Dependency-free Discord Rich Presence for VALORANT, with a rank you choose yourself",
   "type": "module",
   "main": "src/index.mjs",
   "scripts": {
     "start": "node src/index.mjs",
+    "setup": "node src/index.mjs --setup",
     "ranks": "node src/index.mjs --list-ranks",
-    "demo": "node src/index.mjs --demo --debug",
+    "demo": "node src/index.mjs --demo",
     "debug": "node src/index.mjs --debug",
-    "download-assets": "node scripts/download-assets.mjs"
+    "test": "node --test"
+  },
+  "keywords": [
+    "valorant",
+    "discord",
+    "discord-rpc",
+    "rich-presence",
+    "rpc"
+  ],
+  "author": "canbedir",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/canbedir/discord-valorant-rpc.git"
+  },
+  "homepage": "https://github.com/canbedir/discord-valorant-rpc#readme",
+  "bugs": {
+    "url": "https://github.com/canbedir/discord-valorant-rpc/issues"
   },
   "engines": {
     "node": ">=18"
   },
-  "license": "MIT",
-  "private": true
+  "os": [
+    "win32"
+  ]
 }

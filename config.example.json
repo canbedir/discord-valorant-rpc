@@ -1,5 +1,5 @@
 {
-  "discordClientId": "YOUR_DISCORD_APPLICATION_ID",
+  "discordClientId": "",
 
   "language": "en",
   "pollIntervalMs": 3000,
@@ -7,8 +7,7 @@
   "rank": {
     "mode": "real",
     "override": "Radiant",
-    "overrideLeaderboardPosition": 0,
-    "showLeaderboardPosition": false
+    "leaderboardPosition": 0
   },
 
   "display": {
@@ -23,10 +22,5 @@
   "idle": {
     "showWhenGameClosed": false,
     "text": "VALORANT closed"
-  },
-
-  "assets": {
-    "source": "url",
-    "keyPrefix": ""
   }
 }

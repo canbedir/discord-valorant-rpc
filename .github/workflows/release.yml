@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to release (e.g. v1.0.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run tests
+        run: node --test
+
+      - name: Resolve version
+        id: version
+        run: echo "tag=${GITHUB_REF_NAME:-${{ inputs.tag }}}" >> "$GITHUB_OUTPUT"
+
+      # Ship only what is needed to run: no tests, no workflows, no git data.
+      - name: Build the package
+        run: |
+          NAME="discord-valorant-rpc-${{ steps.version.outputs.tag }}"
+          mkdir -p "dist/$NAME"
+          cp -r src "dist/$NAME/"
+          cp config.example.json package.json start.bat README.md LICENSE "dist/$NAME/"
+          cd dist && zip -r "../$NAME.zip" "$NAME"
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            "discord-valorant-rpc-${{ steps.version.outputs.tag }}.zip" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --generate-notes
