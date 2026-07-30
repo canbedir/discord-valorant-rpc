@@ -38,14 +38,23 @@ npm start
 
 ## First run
 
-The setup wizard asks three things. The only one you need to prepare is the
-Discord Application ID:
+Everything happens in the console except creating the Discord application, which
+takes a minute in the browser.
 
-1. Open [discord.com/developers/applications](https://discord.com/developers/applications) → **New Application**
-2. Name it **`VALORANT`** — that name is the title Discord displays
-3. Copy the **Application ID** from *General Information*
+**1. Create the app.** Go to
+[discord.com/developers/applications](https://discord.com/developers/applications)
+→ **New Application** and name it **`VALORANT`**. That name is the title Discord
+displays, so anything else will show up instead.
 
-Then just run it — the wizard handles the rest:
+<img src="images/create-app.png" width="440" alt="Discord's Create a new app dialog with the name field filled in as VALORANT">
+
+**2. Copy the Application ID** from *General Information*. It is the long number
+— not a bot token, not the public key.
+
+<img src="images/application-id.png" width="720" alt="The General Information page with the Application ID field highlighted below Tags">
+
+**3. Run it.** The wizard asks for that ID, then your language and which rank to
+show:
 
 <img src="images/step3-custom-rank.png" width="760" alt="The setup wizard in a terminal: step 1 asks for the Discord Application ID, step 2 offers English or Türkçe, step 3 asks which rank to show and accepts a rank name">
 
