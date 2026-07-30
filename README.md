@@ -8,17 +8,14 @@
 [![Release](https://img.shields.io/github/v/release/canbedir/discord-valorant-rpc?color=1f6feb)](https://github.com/canbedir/discord-valorant-rpc/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/canbedir/discord-valorant-rpc/total?color=2da44e)](https://github.com/canbedir/discord-valorant-rpc/releases)
 [![License](https://img.shields.io/badge/license-MIT-1f6feb)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%E2%89%A518-5FA04E?logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)](#)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-2da44e)](package.json)
 
-</div>
+<br>
 
-```
-VALORANT
-Competitive — Ascent          ← map splash
-9 - 5                         ← Immortal 3 badge
-```
+<img src="images/dc-rpc.png" width="480" alt="Discord activity card reading VALORANT, Competitive — Ascent, 6 - 4, with the Ascent map splash and a rank badge in the corner">
+
+</div>
 
 No dependencies, no build step, no Riot login. Set it up once from the console
 and forget about it.
