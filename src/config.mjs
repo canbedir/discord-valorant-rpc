@@ -22,6 +22,7 @@ const DEFAULTS = {
     showParty: true,
     showAccountLevel: false,
     showRankInMenus: true,
+    showRankInText: false,
     largeImage: 'map',
     buttons: [],
   },
@@ -90,6 +91,28 @@ export function loadConfig() {
 /** Writes config.json with the indentation a human would use. */
 export function saveConfig(config) {
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf8');
+}
+
+/** config.json exactly as it is on disk, without defaults or validation. */
+function readRawConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Merges a patch into config.json on disk and returns the result.
+ *
+ * Re-reading first matters: the config held in memory is whatever was loaded
+ * at startup, so writing that back would silently undo any edit made by hand
+ * while the app was running. Only the keys in `patch` are touched.
+ */
+export function updateConfig(patch) {
+  const merged = deepMerge(readRawConfig(), patch);
+  saveConfig(merged);
+  return merged;
 }
 
 export { CONFIG_PATH, DEFAULTS };

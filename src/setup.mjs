@@ -1,6 +1,6 @@
 import readline from 'node:readline';
 import { stdin, stdout } from 'node:process';
-import { CONFIG_PATH, isValidClientId, saveConfig } from './config.mjs';
+import { CONFIG_PATH, isValidClientId, updateConfig } from './config.mjs';
 import { m, setLanguage, availableLanguages, localizeRankName } from './i18n.mjs';
 import { COLORS } from './log.mjs';
 
@@ -147,7 +147,11 @@ export async function runSetup(config, catalog) {
     step(3, 3, m('setup.rankTitle'));
     const summary = await askRank(prompter, config, catalog);
 
-    saveConfig(config);
+    updateConfig({
+      discordClientId: config.discordClientId,
+      language: config.language,
+      rank: config.rank,
+    });
     console.log(`\n  ${COLORS.green}${m('setup.saved', CONFIG_PATH)}${COLORS.reset}`);
     console.log(`  ${m('setup.rankNow', summary)}\n`);
   } finally {
@@ -162,7 +166,7 @@ export async function changeRank(config, catalog) {
   try {
     console.log(`\n  ${bold(m('setup.rankTitle'))}`);
     const summary = await askRank(prompter, config, catalog);
-    saveConfig(config);
+    updateConfig({ rank: config.rank });
     console.log(`  ${COLORS.green}${m('setup.rankNow', summary)}${COLORS.reset}\n`);
     return summary;
   } finally {

@@ -33,6 +33,7 @@ const baseConfig = () => ({
     showParty: true,
     showAccountLevel: false,
     showRankInMenus: true,
+    showRankInText: false,
     largeImage: 'map',
     buttons: [],
   },
@@ -222,6 +223,49 @@ test('activity: largeImage "rank" drops the redundant small badge', () => {
 
   assert.equal(activity.assets.large_image, 'p1.png');
   assert.equal(activity.assets.small_image, undefined);
+});
+
+test('activity: rank stays out of the text unless asked for', () => {
+  const config = baseConfig();
+  config.rank.mode = 'override';
+  config.rank.override = 'Radiant';
+  config.rank.leaderboardPosition = 121;
+
+  // Off by default: the label is tooltip-only, which is what made a set
+  // leaderboardPosition look like it did nothing at all.
+  const hidden = buildActivity({
+    presence: inGame,
+    catalog,
+    config,
+    t: createTranslator('en'),
+    startedAt: 1,
+  });
+  assert.equal(hidden.state, '9 - 5');
+  assert.equal(hidden.assets.small_text, 'Radiant #121');
+
+  config.display.showRankInText = true;
+  const shown = buildActivity({
+    presence: inGame,
+    catalog,
+    config,
+    t: createTranslator('en'),
+    startedAt: 1,
+  });
+  assert.equal(shown.state, '9 - 5 • Radiant #121');
+});
+
+test('activity: rank text stands alone when there is no score', () => {
+  const config = baseConfig();
+  config.display.showRankInText = true;
+  config.display.showParty = false;
+  const activity = buildActivity({
+    presence: { ...inGame, sessionLoopState: 'MENUS', matchMap: '' },
+    catalog,
+    config,
+    t: createTranslator('en'),
+    startedAt: 1,
+  });
+  assert.equal(activity.state, 'Platinum 1');
 });
 
 test('activity: deathmatch hides the score', () => {

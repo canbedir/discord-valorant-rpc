@@ -15,6 +15,7 @@
     "showParty": true,
     "showAccountLevel": false,
     "showRankInMenus": true,
+    "showRankInText": false,
     "largeImage": "map",
     "buttons": []
   },

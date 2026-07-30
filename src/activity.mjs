@@ -131,6 +131,12 @@ export function buildActivity({ presence, catalog, config, t, startedAt }) {
     }
   }
 
+  // The badge only carries its label in a tooltip, which nobody hovers. This
+  // puts the rank — and any leaderboard number — on the visible state line.
+  if (config.display.showRankInText && rank) {
+    state = state ? `${state} • ${rank.label}` : rank.label;
+  }
+
   if (config.display.showAccountLevel && presence.accountLevel) {
     const level = `${t('level')} ${presence.accountLevel}`;
     state = state ? `${state} • ${level}` : level;

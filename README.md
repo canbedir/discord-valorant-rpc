@@ -98,6 +98,7 @@ you can only set by editing it:
     "showParty": true,
     "showAccountLevel": false,
     "showRankInMenus": true,
+    "showRankInText": false,
     "largeImage": "map",
     "buttons": []
   },
@@ -109,10 +110,31 @@ you can only set by editing it:
 }
 ```
 
-- **`rank.leaderboardPosition`** — above zero shows `Radiant #3`
+- **`display.showRankInText`** — writes the rank onto the card as text
+- **`rank.leaderboardPosition`** — above zero appends `#121` to the rank
 - **`display.largeImage`** — `map` (map in a match, player card in menus), `card`, or `rank`
 - **`display.buttons`** — up to two: `[{ "label": "Profile", "url": "https://..." }]`
 - **`language`** — `en` or `tr`, applies to both Discord and the console
+
+### Showing your leaderboard position
+
+Discord renders exactly two lines of text on the card, `details` and `state`.
+Everything attached to an image — including the rank name and its leaderboard
+number — is a **tooltip**, only visible when someone hovers the badge. So
+setting `leaderboardPosition` on its own looks like it does nothing.
+
+To put it on the card, turn on `showRankInText` as well:
+
+```json
+"rank":    { "mode": "override", "override": "Radiant", "leaderboardPosition": 121 },
+"display": { "showRankInText": true }
+```
+
+```
+VALORANT
+Competitive — Ascent
+6 - 4 • Radiant #121
+```
 
 ## Commands
 

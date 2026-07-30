@@ -39,6 +39,9 @@ const MESSAGES = {
     'app.demo': 'DEMO mode: sending synthetic presence instead of the real one.',
     'app.rankOverride': 'Rank mode: override -> "{0}"',
     'app.rankMode': 'Rank mode: {0}',
+    'app.tooltipOnly':
+      'rank.leaderboardPosition is set, but the rank only appears in the badge tooltip. ' +
+      'Set display.showRankInText to true to put it on the card itself.',
     'app.cleared': 'Presence cleared (VALORANT is not running).',
     'app.shuttingDown': 'Shutting down, clearing the Discord presence...',
 
@@ -99,6 +102,9 @@ const MESSAGES = {
     'app.demo': 'DEMO modu: gercek presence yerine sahte veri gonderiliyor.',
     'app.rankOverride': 'Rank modu: override -> "{0}"',
     'app.rankMode': 'Rank modu: {0}',
+    'app.tooltipOnly':
+      'rank.leaderboardPosition ayarli ama rank yalnizca rozetin tooltipinde gorunuyor. ' +
+      'Kartta yazi olarak gorunmesi icin display.showRankInText degerini true yap.',
     'app.cleared': 'Durum temizlendi (VALORANT calismiyor).',
     'app.shuttingDown': 'Kapaniyor, Discord durumu temizleniyor...',
 

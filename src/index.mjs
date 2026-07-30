@@ -137,6 +137,11 @@ async function main() {
       ? m('app.rankOverride', describeRank(config, catalog))
       : m('app.rankMode', config.rank.mode),
   );
+  // Setting a leaderboard position and seeing nothing change is a dead end,
+  // because the label lives in a tooltip until showRankInText is on.
+  if (Number(config.rank.leaderboardPosition) > 0 && !config.display.showRankInText) {
+    log.warn(m('app.tooltipOnly'));
+  }
 
   await tick();
   const timer = setInterval(() => {
