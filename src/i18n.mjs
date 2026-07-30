@@ -42,6 +42,9 @@ const MESSAGES = {
     'app.tooltipOnly':
       'rank.leaderboardPosition is set, but the rank only appears in the badge tooltip. ' +
       'Set display.showRankInText to true to put it on the card itself.',
+    'app.positionNeedsTopTier':
+      'rank.leaderboardPosition is set but ignored: a placing only applies to {0}, ' +
+      'and the chosen rank is {1}.',
     'app.cleared': 'Presence cleared (VALORANT is not running).',
     'app.shuttingDown': 'Shutting down, clearing the Discord presence...',
 
@@ -64,6 +67,8 @@ const MESSAGES = {
     'setup.rankHide': 'No rank badge',
     'setup.rankPrompt': 'Rank name or tier number (e.g. Radiant, Immortal 3, 27)',
     'setup.rankInvalid': 'Unknown rank. Some valid values: Radiant, Immortal 3, Diamond 1, 27.',
+    'setup.positionPrompt': '{0} has a leaderboard. Position to show? (Enter to skip)',
+    'setup.positionInvalid': 'Enter a positive number, or press Enter to skip.',
     'setup.rankNow': 'Rank is now: {0}',
     'setup.saved': 'Saved to {0}',
     'setup.invalidChoice': 'Pick one of the numbers above.',
@@ -105,6 +110,9 @@ const MESSAGES = {
     'app.tooltipOnly':
       'rank.leaderboardPosition ayarli ama rank yalnizca rozetin tooltipinde gorunuyor. ' +
       'Kartta yazi olarak gorunmesi icin display.showRankInText degerini true yap.',
+    'app.positionNeedsTopTier':
+      'rank.leaderboardPosition ayarli ama yok sayiliyor: sira yalnizca {0} icin gecerli, ' +
+      'secilen rank ise {1}.',
     'app.cleared': 'Durum temizlendi (VALORANT calismiyor).',
     'app.shuttingDown': 'Kapaniyor, Discord durumu temizleniyor...',
 
@@ -127,6 +135,8 @@ const MESSAGES = {
     'setup.rankHide': 'Rank gosterme',
     'setup.rankPrompt': 'Rank adi veya tier numarasi (orn. Radiant, Olumsuz 3, 27)',
     'setup.rankInvalid': 'Bilinmeyen rank. Gecerli ornekler: Radiant, Olumsuz 3, Elmas 1, 27.',
+    'setup.positionPrompt': '{0} liderlik tablosunda. Kacinci sira yazsin? (Gecmek icin Enter)',
+    'setup.positionInvalid': 'Pozitif bir sayi gir, ya da gecmek icin Enter.',
     'setup.rankNow': 'Rank artik: {0}',
     'setup.saved': '{0} dosyasina kaydedildi',
     'setup.invalidChoice': 'Yukaridaki numaralardan birini sec.',

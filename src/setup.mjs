@@ -75,6 +75,24 @@ async function askChoice(prompter, labels) {
 }
 
 /**
+ * Optional follow-up for the top tier. An empty answer means "no placing",
+ * which is the common case, so Enter is the fast path.
+ */
+async function askLeaderboardPosition(prompter, config, catalog) {
+  const tierName = localizeRankName(catalog.rank(catalog.topTier()).name, config.language);
+  console.log(dim(`     ${m('setup.positionPrompt', tierName)}`));
+
+  return ask(prompter, {
+    parse: (answer) => {
+      if (answer === '') return 0;
+      const value = Number(answer);
+      return Number.isInteger(value) && value > 0 ? value : undefined;
+    },
+    invalidMessage: m('setup.positionInvalid'),
+  });
+}
+
+/**
  * The rank question, shared by the first-run wizard and the [r] hotkey.
  * Mutates config.rank in place and returns a human-readable summary.
  */
@@ -100,6 +118,13 @@ async function askRank(prompter, config, catalog) {
     // language it was typed in. valorant-api shouts its tier names, so this
     // goes through the English localizer to get "Immortal 3" over "IMMORTAL 3".
     config.rank.override = localizeRankName(catalog.rank(tier).name, 'en');
+
+    // A placing only exists at the top tier, so the question is only asked
+    // there — and any number left over from a previous choice is cleared,
+    // rather than sitting in the file looking like it still applies.
+    config.rank.leaderboardPosition = catalog.isTopTier(tier)
+      ? await askLeaderboardPosition(prompter, config, catalog)
+      : 0;
   }
 
   return describeRank(config, catalog);
@@ -112,7 +137,11 @@ export function describeRank(config, catalog) {
 
   const tier = catalog.resolveRank(config.rank.override, config.language);
   const rank = tier === null ? null : catalog.rank(tier);
-  return rank ? localizeRankName(rank.name, config.language) : String(config.rank.override);
+  if (!rank) return String(config.rank.override);
+
+  const label = localizeRankName(rank.name, config.language);
+  const position = catalog.isTopTier(tier) ? Number(config.rank.leaderboardPosition) || 0 : 0;
+  return position > 0 ? `${label} #${position}` : label;
 }
 
 /**

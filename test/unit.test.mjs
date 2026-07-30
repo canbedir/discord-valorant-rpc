@@ -159,6 +159,35 @@ test('rank: leaderboard position is appended only when above zero', () => {
   assert.equal(resolveDisplayRank(inGame, config, catalog, 'en').label, 'Radiant #3');
 });
 
+test('rank: a configured position is ignored below the top tier', () => {
+  const config = baseConfig();
+  config.rank.mode = 'override';
+  config.rank.leaderboardPosition = 121;
+
+  config.rank.override = 'Immortal 3';
+  assert.equal(resolveDisplayRank(inGame, config, catalog, 'en').label, 'Immortal 3');
+
+  config.rank.override = 'Radiant';
+  assert.equal(resolveDisplayRank(inGame, config, catalog, 'en').label, 'Radiant #121');
+});
+
+test('rank: real mode trusts whatever Riot reports, at any tier', () => {
+  const config = baseConfig();
+  config.rank.leaderboardPosition = 999; // override-only, must not leak in
+
+  // Platinum 1 with a placing is nonsense we did not invent, so it is shown.
+  const presence = { ...inGame, leaderboardPosition: 42 };
+  assert.equal(resolveDisplayRank(presence, config, catalog, 'en').label, 'Platinum 1 #42');
+  assert.equal(resolveDisplayRank(inGame, config, catalog, 'en').label, 'Platinum 1');
+});
+
+test('catalog: top tier is the highest number, not the name', () => {
+  assert.equal(catalog.topTier(), 27);
+  assert.ok(catalog.isTopTier(27));
+  assert.ok(!catalog.isTopTier(26));
+  assert.ok(!catalog.isTopTier(0));
+});
+
 test('rank: unknown override falls back to the real tier', () => {
   const config = baseConfig();
   config.rank.mode = 'override';

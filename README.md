@@ -111,22 +111,32 @@ you can only set by editing it:
 ```
 
 - **`display.showRankInText`** — writes the rank onto the card as text
-- **`rank.leaderboardPosition`** — above zero appends `#121` to the rank
+- **`rank.leaderboardPosition`** — a Radiant placing; see below
 - **`display.largeImage`** — `map` (map in a match, player card in menus), `card`, or `rank`
 - **`display.buttons`** — up to two: `[{ "label": "Profile", "url": "https://..." }]`
 - **`language`** — `en` or `tr`, applies to both Discord and the console
 
-### Showing your leaderboard position
+### Leaderboard position
 
-Discord renders exactly two lines of text on the card, `details` and `state`.
-Everything attached to an image — including the rank name and its leaderboard
-number — is a **tooltip**, only visible when someone hovers the badge. So
-setting `leaderboardPosition` on its own looks like it does nothing.
+Only Radiant has a leaderboard, so a placing is only offered there. Pick
+Radiant in the wizard and it asks for one; press Enter to skip:
 
-To put it on the card, turn on `showRankInText` as well:
+```
+     Rank name or tier number (e.g. Radiant, Immortal 3, 27)
+  > Radiant
+     Radiant has a leaderboard. Position to show? (Enter to skip)
+  > 121
+  Rank is now: Radiant #121
+```
+
+Choosing any other rank clears it, so `#121` never ends up stuck to a Gold 2.
+In `real` mode the number Riot reports is used as-is, whatever the tier.
+
+By default it shows in the badge tooltip, together with the rank name — hover
+the badge and you get `Radiant #121`. To put it on the card as text instead,
+where it is visible without hovering, turn on `showRankInText`:
 
 ```json
-"rank":    { "mode": "override", "override": "Radiant", "leaderboardPosition": 121 },
 "display": { "showRankInText": true }
 ```
 

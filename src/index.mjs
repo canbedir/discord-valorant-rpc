@@ -7,7 +7,7 @@ import { buildActivity, buildIdleActivity, resetOverrideWarning } from './activi
 import { nextDemoPresence } from './demoPresence.mjs';
 import { runSetup, changeRank, describeRank } from './setup.mjs';
 import { log, setDebug, COLORS } from './log.mjs';
-import { m, setLanguage, createTranslator } from './i18n.mjs';
+import { m, setLanguage, createTranslator, localizeRankName } from './i18n.mjs';
 
 const RECONNECT_DELAY_MS = 15000;
 const CTRL_C = '\u0003';
@@ -138,9 +138,20 @@ async function main() {
       : m('app.rankMode', config.rank.mode),
   );
   // Setting a leaderboard position and seeing nothing change is a dead end,
-  // because the label lives in a tooltip until showRankInText is on.
-  if (Number(config.rank.leaderboardPosition) > 0 && !config.display.showRankInText) {
-    log.warn(m('app.tooltipOnly'));
+  // so both reasons it can be a no-op are called out explicitly.
+  if (Number(config.rank.leaderboardPosition) > 0) {
+    const overriddenTier =
+      config.rank.mode === 'override'
+        ? catalog.resolveRank(config.rank.override, config.language)
+        : null;
+
+    if (overriddenTier !== null && !catalog.isTopTier(overriddenTier)) {
+      const top = localizeRankName(catalog.rank(catalog.topTier()).name, config.language);
+      const chosen = localizeRankName(catalog.rank(overriddenTier).name, config.language);
+      log.warn(m('app.positionNeedsTopTier', top, chosen));
+    } else if (!config.display.showRankInText) {
+      log.warn(m('app.tooltipOnly'));
+    }
   }
 
   await tick();

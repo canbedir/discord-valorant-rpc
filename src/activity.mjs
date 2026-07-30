@@ -25,8 +25,10 @@ export function resetOverrideWarning() {
  *   override -> a fixed tier from config, regardless of the real one
  *   hide     -> no rank badge at all
  *
- * The leaderboard number follows the same split: the real one in real mode,
- * the configured one in override mode. Either is shown only when above zero.
+ * The leaderboard number follows the same split, with one asymmetry: in real
+ * mode whatever Riot reports is trusted as-is, but a configured number is only
+ * applied at the top tier, since a leaderboard placing is meaningless for a
+ * made-up Gold 2. Either is shown only when above zero.
  */
 export function resolveDisplayRank(presence, config, catalog, lang) {
   if (config.rank.mode === 'hide') return null;
@@ -44,7 +46,7 @@ export function resolveDisplayRank(presence, config, catalog, lang) {
       tier = presence.competitiveTier;
       leaderboard = presence.leaderboardPosition;
     } else {
-      leaderboard = config.rank.leaderboardPosition;
+      leaderboard = catalog.isTopTier(tier) ? config.rank.leaderboardPosition : 0;
     }
   } else {
     tier = presence.competitiveTier;

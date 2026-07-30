@@ -124,6 +124,19 @@ class Catalog {
   }
 
   /**
+   * The highest tier in the table — Radiant today, whatever tops it tomorrow.
+   * Used instead of matching the name "RADIANT", so a renamed or newly added
+   * top tier keeps working.
+   */
+  topTier() {
+    return Math.max(...this.raw.ranks.map((r) => r.tier));
+  }
+
+  isTopTier(tier) {
+    return Number(tier) === this.topTier();
+  }
+
+  /**
    * Turns whatever the user wrote in config into a tier number. Accepts a
    * number ("27"), the English name ("Immortal 3") or a localized one
    * ("Olumsuz 3"), with or without accents.
