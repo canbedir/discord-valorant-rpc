@@ -152,6 +152,7 @@ Competitive — Ascent
 npm start          # run it
 npm run setup      # re-run the wizard
 npm run ranks      # list every rank name
+npm run doctor     # diagnose Discord connection problems
 npm run demo       # preview in Discord without launching VALORANT
 npm run debug      # verbose output
 npm test           # run the test suite
@@ -163,8 +164,17 @@ npm test           # run the test suite
 "Share your detected activities" has to be on. You also can't see your own Rich
 Presence — check from another account or a server member list.
 
-**"No Discord IPC socket found".** The Discord *desktop app* must be running.
-The browser version has no Rich Presence.
+**"No Discord IPC socket found".** Run `npm run doctor` — it checks which
+Discord build is running, whether the socket exists and whether a handshake
+gets through, then tells you which of these it is:
+
+- Discord is not running, or only the browser version is — that one has no
+  Rich Presence at all.
+- Discord came from the **Microsoft Store**. That build is sandboxed and never
+  exposes the socket. Uninstall it and use the installer from
+  [discord.com/download](https://discord.com/download).
+- Discord just started and has not opened the socket yet.
+- One side is elevated. Run both as administrator, or both as a normal user.
 
 **"Invalid Client ID".** That's the Application ID (17–20 digits), not a bot
 token.

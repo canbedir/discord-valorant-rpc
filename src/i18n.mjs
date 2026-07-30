@@ -21,7 +21,28 @@ const MESSAGES = {
     'riot.presenceFailed': 'Could not read presence: {0}',
     'riot.backOnline': 'Riot Client is reachable again.',
 
-    'discord.noSocket': 'No Discord IPC socket found. Is the Discord desktop app running?',
+    'discord.noSocket':
+      'No Discord IPC socket found. The Discord desktop app has to be running ' +
+      '(the browser version has no Rich Presence). Run "npm run doctor" to find out why.',
+
+    'doctor.title': 'Discord connection report',
+    'doctor.verdict': 'Verdict',
+    'doctor.allGood': 'Everything works — Discord is reachable.',
+    'doctor.notRunning':
+      'Discord is not running. Start the desktop app; the browser version has no Rich Presence.',
+    'doctor.badClientId':
+      'Discord rejected the Application ID. The socket is fine — the id in config.json is wrong. ' +
+      'Copy it again from General Information, and run "npm run setup" to replace it.',
+    'doctor.noClientId': 'No Application ID set yet. Run "npm run setup" first.',
+    'doctor.storeBuild':
+      'This is the Microsoft Store build of Discord. It runs sandboxed and does not expose the ' +
+      'Rich Presence socket. Uninstall it and install Discord from discord.com/download.',
+    'doctor.noPipe':
+      'Discord is running but has not opened its Rich Presence socket. Give it a moment after ' +
+      'launch, or fully quit it from the tray and reopen it.',
+    'doctor.elevation':
+      'The socket exists but could not be opened. This usually means one side is elevated: ' +
+      'run this and Discord both as administrator, or both as a normal user.',
     'discord.closed': 'Discord closed the connection',
     'discord.socketClosed': 'socket closed',
     'discord.handshakeTimeout': 'handshake timed out',
@@ -89,7 +110,28 @@ const MESSAGES = {
     'riot.presenceFailed': 'Presence okunamadi: {0}',
     'riot.backOnline': 'Riot Client tekrar erisilebilir.',
 
-    'discord.noSocket': 'Discord IPC soketi bulunamadi. Discord masaustu uygulamasi acik mi?',
+    'discord.noSocket':
+      'Discord IPC soketi bulunamadi. Discord masaustu uygulamasi acik olmali ' +
+      '(tarayici surumunde Rich Presence yok). Sebebini ogrenmek icin: npm run doctor',
+
+    'doctor.title': 'Discord baglanti raporu',
+    'doctor.verdict': 'Sonuc',
+    'doctor.allGood': 'Her sey calisiyor - Discord erisilebilir durumda.',
+    'doctor.notRunning':
+      'Discord calismiyor. Masaustu uygulamasini ac; tarayici surumunde Rich Presence yok.',
+    'doctor.badClientId':
+      "Discord Application ID'yi reddetti. Soket saglam - config.json'daki id yanlis. " +
+      'General Information sekmesinden tekrar kopyala, degistirmek icin: npm run setup',
+    'doctor.noClientId': 'Henuz Application ID girilmemis. Once: npm run setup',
+    'doctor.storeBuild':
+      "Bu Discord'un Microsoft Store surumu. Sandbox icinde calistigi icin Rich Presence " +
+      'soketini disariya acmiyor. Kaldirip discord.com/download adresinden kur.',
+    'doctor.noPipe':
+      'Discord calisiyor ama Rich Presence soketini henuz acmamis. Acilistan sonra biraz bekle, ' +
+      'ya da tepsiden tamamen kapatip yeniden ac.',
+    'doctor.elevation':
+      'Soket var ama acilamadi. Genelde taraflardan birinin yonetici olarak calismasindan olur: ' +
+      "ikisini de yonetici olarak ya da ikisini de normal kullanici olarak calistir.",
     'discord.closed': 'Discord baglantiyi kapatti',
     'discord.socketClosed': 'soket kapandi',
     'discord.handshakeTimeout': 'handshake zaman asimi',

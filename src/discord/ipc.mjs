@@ -45,15 +45,22 @@ export class DiscordIPC extends EventEmitter {
     this.buffer = Buffer.alloc(0);
     this.pendingActivity = undefined;
     this.user = null;
+    this.probe = [];
   }
 
-  /** Tries every pipe in turn and waits for READY on the first one that answers. */
+  /**
+   * Tries every pipe in turn and waits for READY on the first one that answers.
+   * Per-pipe failures are kept in `probe` so --doctor can show why each one
+   * was rejected instead of only reporting that none worked.
+   */
   async connect() {
+    this.probe = [];
     for (let i = 0; i < PIPE_COUNT; i++) {
       try {
         await this.#tryPipe(i);
         return this.user;
       } catch (err) {
+        this.probe.push({ pipe: i, error: err.message });
         log.debug(`discord-ipc-${i}: ${err.message}`);
       }
     }

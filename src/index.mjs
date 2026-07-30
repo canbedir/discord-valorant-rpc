@@ -6,6 +6,7 @@ import { DiscordIPC } from './discord/ipc.mjs';
 import { buildActivity, buildIdleActivity, resetOverrideWarning } from './activity.mjs';
 import { nextDemoPresence } from './demoPresence.mjs';
 import { runSetup, changeRank, describeRank } from './setup.mjs';
+import { runDoctor } from './doctor.mjs';
 import { log, setDebug, COLORS } from './log.mjs';
 import { m, setLanguage, createTranslator, localizeRankName } from './i18n.mjs';
 
@@ -32,6 +33,11 @@ async function main() {
 
   if (args.includes('--list-ranks')) {
     printRanks(catalog, config.language);
+    return;
+  }
+
+  if (args.includes('--doctor')) {
+    await runDoctor(config);
     return;
   }
 

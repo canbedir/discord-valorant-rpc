@@ -8,6 +8,7 @@
     "start": "node src/index.mjs",
     "setup": "node src/index.mjs --setup",
     "ranks": "node src/index.mjs --list-ranks",
+    "doctor": "node src/index.mjs --doctor",
     "demo": "node src/index.mjs --demo",
     "debug": "node src/index.mjs --debug",
     "test": "node --test"
